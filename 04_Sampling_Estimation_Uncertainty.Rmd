@@ -1,0 +1,363 @@
+---
+title: "Sampling, Estimation, and Uncertainty"
+output:
+  html_document:
+    css: tutorial.css
+    fig_caption: yes
+    highlight: pygments
+    theme: simplex
+    toc: yes
+    toc_float: yes
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(eval = T)
+library(tigerstats)
+lattice.options(default.theme = standard.theme(color = FALSE))
+```
+This page was last updated on `r format(Sys.time(), '%B %d, %Y')`.
+
+For students in BIOL202, you can find R code associated with all chapters of the textbook [here](http://whitlockschluter.zoology.ubc.ca/r-code/rcode03).  
+
+* * *
+
+## Getting started
+
+In this tutorial you will learn how to:  
+
+* generate random samples from a population, to explore concepts such as sampling error  
+* quantify uncertainty around estimates: standard error, confidence intervals  
+* create and visualize sampling distributions of the mean  
+* generate a vector of random numbers drawn from a normal distribution
+
+* * *
+
+### Required packages
+
+* the `tigerstats` package
+* the `dplyr` package
+
+You probably need to install the latter package:
+```
+install.packages("dplyr")
+library(dplyr)
+```
+
+* * *
+
+### Import data
+
+Import in the human gene length data used in the text book (Chapter 4) directly from the text website:  
+```{r}
+humanGeneLengths <- read.csv(url("http://whitlockschluter.zoology.ubc.ca/wp-content/data/chapter04/chap04e1HumanGeneLengths.csv"), header = TRUE)
+```
+
+* * *
+
+### Inspect the data
+
+Let's look at the first handful of rows:
+```{r}
+head(humanGeneLengths)
+```
+
+And use `inspect` to get some descriptive statistics: 
+```{r}
+inspect(humanGeneLengths)
+```
+There are 20290 observations in the data set, each representing a gene length.
+
+Let's visualize the data with a histogram:
+
+```{r  fig.cap = "Figure 1: Histogram of gene lengths in the human genome (n = 20290).", fig.width = 4, fig.height = 4}
+histogram(~ geneLength, data = humanGeneLengths, type = "count", col = "firebrick")
+```
+
+__Problem__: there is a substantial skew to the data. If we consult Fig. 4.1-1 in the text, we see that there are 26 genes excluded from the histogram because they are beyond 15000 nucleotides long, and thus render the histogram uninformative.  Let's exclude these here also.
+
+* * *
+
+### Digression: subsetting data using the `filter` command 
+
+We first introduce a new package `dplyr`, which is used to manipulate data sets within R.
+
+There are many webpages about the `dplyr` package, including this excellent one [here](https://sesync-ci.github.io/data-manipulation-in-R-lesson/2016/07/26/).
+
+We will use the `filter` function from the `dplyr` package, to create a new data frame that holds only those genes less than 15000 nucleotides long:
+
+```{r}
+shortgenes <- filter(humanGeneLengths, geneLength < 15000)
+```
+
+This same outcome could have been achieved with the `subset` function in the base R package:
+
+```
+shortgenes <- subset(humanGeneLengths, geneLength < 15000)
+```
+
+But we'll make more use of the `dplyr` package later, so introduce it here.
+
+* * *
+
+### Visualizing the subsetted data   
+
+Now let's re-plot the data after having excluded the extreme values:
+
+```{r  fig.cap = "Figure 1: Histogram of gene lengths in the human genome (n = 20264).", fig.width = 4, fig.height = 4}
+histogram(~ geneLength, data = shortgenes, 
+          type = "count", 
+          col = "firebrick", 
+          ylab = "Number of genes",
+          xlab = "Gene length (number of nucleotides)",
+          nint = 25)
+```
+
+
+Recall that this is the entire __population__ of genes in the human genome. We are going to draw random samples from this dataset to explore the concepts of __sampling error__ and __estimating with uncertainty__.
+
+1. Try reproducing the histogram above using the `hist` function instead of the `histogram` function. It doesn't need to be reproduced exactly, but do your best to get close.  
+
+**HINT**: Go to Tutorial_01 and the section ["creating a histogram"](https://people.ok.ubc.ca/jpither/modules/Visualizing_describing_single_variable.html#creating_a_histogram), and you'll see some arguments used in the `hist` function. For instance, the argument `las = 1` rotates the y-axis tick labels so they're horizontal, and the `main = ""` makes sure that there is no "main" title on the graph (because we provide a figure heading instead). Consult the help on the `hist` function to find out about the other arguments you can use.  
+
+
+* * *
+
+## Random samples
+
+There is a function `sample` in the base R package that is easy to use for the purpose collecting random samples. Look at the help function for it (copy and paste the code between the "```" into your command console):
+
+```
+?sample
+```
+
+This may show you multiple help options (depending on the number of different R packages that include a `sample` function). Choose the one that says "Random samples and permutations" from the `base` package.  
+
+The `replace` argument in the dictates whether the sampling we conduct occurs with or without replacement. For instance, the following code will not work (try copying and pasting into your console):  
+
+```
+sample(1:6, 10, replace = F)
+```
+
+Here we're telling R to sample 10 values from a vector that includes only 6 values, and with the `replace = F` argument we told R not to put the sampled integers back in the pile for future sampling.  
+
+If instead we specified `replace = T`, as shown below, then we be conducting "sampling with replacement", and sampled values are placed back in the pool each time, thus enabling the code to work (try it):  
+
+```
+sample(1:6, 10, replace = T)
+```
+
+**TIP**: Most of the time we wish to "sample without replacement", hence `replace = F`.  
+
+* * *
+
+### Setting the "seed"
+
+Before we make use of any function in R that uses a built-in random number generator, including the `sample` function, we need to set the seed number in order to ensure that our results are reproducible.  For this, we use the `set.seed` function.
+
+You can pick any number you want as the seed number. Here we'll use 12, and if you do too, you'll get the same results as shown here.
+
+```{r}
+set.seed(12)
+```
+
+* * *
+
+### Sampling error
+
+Now that the seed number has been set, we can draw a random sample from our population.  
+
+Let's sample _n_ = 20 gene lengths at random from the `humanGeneLengths` data frame, and store them in an object: 
+
+```{r}
+randsamp1 <- sample(humanGeneLengths$geneLength, size = 20, replace = FALSE)
+```
+
+Now let's calculate the mean and standard deviation using our sample:
+
+```{r}
+mean(randsamp1)
+sd(randsamp1)
+```
+
+Let's now draw another random sample of the same size (20):
+```{r}
+randsamp2 <- sample(humanGeneLengths$geneLength, size = 20, replace = FALSE)
+```
+
+And calculate the mean and sd:
+```{r}
+mean(randsamp2)
+sd(randsamp2)
+```
+
+Are they the same as we saw using the first random sample?  NO! This reflects __sampling error__.
+
+1. Follow this [online tutorial](http://www.zoology.ubc.ca/~whitlock/Kingfisher/SamplingNormal.htm) that helps visualize the construction of a sampling distribution of the mean 
+
+* * *
+
+## Sampling distribution of the mean
+
+Now let's learn code to conduct our own resampling exercise.
+
+Let's repeat the sampling exercise above, but do it many time, say 1000 times.
+
+We can't type out the sample command 1000 times, so instead we use the `sapply` function, which helps us repeat a set of procedures a given number of times. 
+
+In the following code we first establish two variables: sample size (n), and the number of times we want to draw random samples (num.samps).  
+Let's create an object `n` to hold our sample size, and another object `num.samps` to hold a number refering to the number of samples we wish to draw:  
+
+```{r}
+n <- 20  # our initial sample size for each sample
+num.samps <- 1000  # number of different samples to draw from the population
+```
+
+Next, we use the handy function `sapply` to repeat the sampling and calculating means "num.samps" times, and then assign the output to an object.
+
+Check out the help file for `sapply`:
+```
+?sapply
+```
+
+Now implement the code:
+```{r}
+sample.means <- sapply(1:num.samps, function(x){
+                  mean(sample(humanGeneLengths$geneLength, 
+                  size = n, replace = FALSE))
+                }) 
+```
+
+There's a lot going on here, and you don't need to know how it all works. But try to decode what's happening if you can. 
+
+You can see, for example, that the `sample` function is inside the `mean` function. When provided with commands nested within other commands, R completes the inner-most command first, then works its way outwards. Thus, R first completes the `sample` function first (it generates the desired sample), then it completes the `mean` function, then it completes the `sapply` function (which tells it to repeat the commands inside the curly brackets `num.samps` times).  
+
+Let's visualize this __sampling distribution of the mean__ that we've created:
+```{r  fig.cap = "Figure 1: Sampling distribution of mean gene lengths from the human genome (n = 1000 samples of size 20).", fig.width = 4, fig.height = 4}
+histogram(~ sample.means, 
+          type = "count", 
+          col = "firebrick", 
+          ylab = "Frequency",
+          xlab = "Mean gene length (number of nucleotides)",
+          xlim = c(0, 10000),
+          nint = 25)
+```
+
+1. Change the value of the object "n" (the sample size variable we defined earlier) from 20 to 50, and re-do the `sapply` sampling routine above, and also the histogram.  Is the sampling distribution of the mean narrower or wider than the one associated with sample size n = 20? (__TIP__: Be sure to set the x-axis lower and upper limits to be the same as those above, to facilitate direct comparison)
+
+* * *
+
+## Standard error of the mean
+
+This is the formula for calculating the __standard error of the mean__ when the population parameter <sigma> is unknown:
+
+![](./more/std_error_eqn.png)
+
+This is one measure of uncertainty that we report alongside our estimate of the population mean.
+
+It represents the standard deviation of the sampling distribution of the mean. Thus, it is a measure of spread for the sampling distribution of the mean.
+
+* * *
+
+### Calculating the SEM in R
+
+We know that the `inspect` function can be used to tell us the number of observations "n" in a sample (and importantly, it takes account of missing values or "NA" values), and also the standard deviation of the variable.
+
+But let's learn how to calculate sample size also using the `length` function, ensuring to take account of any potential missing values by using the `na.omit` function to exclude any "NA" values:
+
+```{r}
+randsamp1.n <- length(na.omit(randsamp1))
+randsamp1.n
+```
+
+So, `randsamp1.n` now holds a single number that represents the number of observations (i.e. sample size "n") in our sample.  
+
+**NOTE:** For some functions, such as `mean` and `sd`, one can include the `na.rm = T` argument, which removes "NA" values before calculating. Others, such as the `length` function do not accommodate the `na.rm = T` argument. Hence our use of the `na.omit` function above.  
+
+Now let's calclulate the standard deviation, again using the `na.omit` function nested in the `sd` function:
+```{r}
+randsamp1.sd <- sd(na.omit(randsamp1))
+randsamp1.sd
+
+```
+
+1. Calculate the standard deviation of the `randsamp1` sample again, this time using the `na.rm = T` argument in lieu of the `na.omit` function.   
+
+Now we have the ingredients to calculate the standard error. We need to use the `sqrt` function for the denominator:
+
+```{r}
+randsamp1.se <- randsamp1.sd / sqrt(randsamp1.n)
+randsamp1.se
+```
+
+### Calculating the __rule of thumb__ 95% confidence interval
+
+Here again we use simply mathematical operations in R to calculate the __Rule of Thumb__ 95% confidence interval.
+
+The __lower confidence limit__ is calculated as the sample mean minus 2 times the standard error.
+
+First, let's calculate the sample mean, and store it in an object:
+
+```{r}
+randsamp1.mean <- mean(randsamp1)
+randsamp1.mean
+```
+
+Now for the lower confidence limit:
+
+```{r}
+randsamp1.lower.cl <- randsamp1.mean - 2 * randsamp1.se
+randsamp1.lower.cl
+```
+
+And the __upper confidence limit__:
+
+```{r}
+randsamp1.upper.cl <- randsamp1.mean + 2 * randsamp1.se
+randsamp1.upper.cl
+```
+
+So the __rule of thumb 95% confidence interval__ is:
+
+```{r}
+randsamp1.ci <- c(randsamp1.lower.cl, randsamp1.upper.cl)
+randsamp1.ci
+```
+
+__NOTE__: In a later tutorial you'll learn how to calculate actual confidence intervals, rather than "rule of thumb" confidence intervals
+
+## List of functions (and the source packages) used in tutorial
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+
+__Data frame structure__: 
+
+* `head`
+* `str`
+* `inspect` (`tigerstats` / `mosaic` packages)
+* `length`
+
+__Sampling__:
+
+* `set.seed`
+* `sample`
+* `sapply`
+
+__Data management and exploration__:
+
+* `filter` (from the `dplyr` package)
+* `subset`
+* `na.omit`
+* `length`
+* `mean`
+* `sd`
+* `sqrt`
+
+__Graphs__:
+
+* `histogram`
+* `hist`
+

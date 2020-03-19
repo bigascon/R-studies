@@ -1,0 +1,663 @@
+---
+title: "Master function list"
+output:
+  html_document:
+    css: tutorial.css
+    fig_caption: yes
+    highlight: pygments
+    theme: simplex
+    toc: yes
+    toc_float: yes
+---
+
+```{r global_options, include = FALSE}
+knitr::opts_chunk$set(eval = TRUE, echo = TRUE, cache = TRUE)
+```
+This page was last updated on `r format(Sys.time(), '%B %d, %Y')`.
+
+* * *
+
+### Tutorial 01: Visualizing and Describing Data
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+* `getwd`  
+
+__Data frame structure__: 
+
+* `names`
+* `head`
+* `str`
+* `inspect` (`tigerstats` / `mosaic` packages)
+
+__Frequency tables__:
+
+* `xtabs`
+* `prop.table`
+* `rowPerc` (`tigerstats`)
+* `colPerc` (`tigerstats`)
+
+__Graphs__:
+
+* `barchartGC` (`tigerstats` / `lattice` packages)
+* `histogram` (`tigerstats` / `lattice` packages)
+* `hist` (base `stats` package)
+
+__Descriptive stats__:
+
+* `favstats` (`tigerstats` and `mosaic` packages)
+* `mean`
+* `median`
+* `var`
+* `sd`
+* `IQR`
+
+* * *
+
+### Tutorial 02: Visualizing associations between variables
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+* `getwd`  
+
+__Data frame structure__: 
+
+* `names`
+* `head`
+* `str`
+* `inspect` (`tigerstats` / `mosaic` packages)
+
+__Contingency tables__:
+
+* `xtabs`
+* `addmargins`
+* `prop.table`
+* `rowPerc` (`tigerstats`)
+* `colPerc` (`tigerstats`)
+
+__Graphs__:
+
+* `barchartGC` (`tigerstats` / `lattice` packages)
+* `mosaicplot` 
+* `stripchart` (`lattice` package)
+* `xyplot` (`lattice` package)
+* `boxplot`
+
+* * *
+
+### Tutorial 03: Calculating descriptive statistics for one variable grouped by another
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library`  
+
+__Descriptive stats__:
+
+* `favtstats`
+* `mean`
+
+* * *  
+
+### Tutorial 04: Sampling, Estimation, and Uncertainty
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+
+__Data frame structure__: 
+
+* `head`
+* `str`
+* `inspect` (`tigerstats` / `mosaic` packages)
+* `length`
+
+__Sampling__:
+
+* `set.seed`
+* `sample`
+* `sapply`
+
+__Data management and exploration__:
+
+* `filter` (from the `dplyr` package)
+* `subset`
+* `na.omit`
+* `length`
+* `mean`
+* `sd`
+* `sqrt`
+
+__Graphs__:
+
+* `histogram`
+* `hist`
+
+* * *
+
+### Tutorial 05: Simulate random trials
+
+__Getting started__:
+
+* `library` 
+
+__Data frame structure__: 
+
+* `head`
+* `str`
+
+__Tabulation__:
+
+* `xtabs`
+
+__Simulation__:
+
+* `set.seed`
+* `sample`
+* `do`
+* `rflip` (from the `mosaic` package in the `tigerstats` package)
+
+__Graphs__:
+
+* `barplot` (different from the `barchartGC` function used in previous tutorials)
+
+* * *
+
+### Tutorial 06: Hypothesis testing
+
+__Getting started__:
+
+* `library` 
+
+__Data frame structure__: 
+
+* `head`
+* `str`
+
+__Tabulation__:
+
+* `xtabs`
+
+__Simulation__:
+
+* `set.seed`
+* `sample`
+* `do`
+* `rflip` (from the `mosaic` package in the `tigerstats` package)
+
+__Math__:
+
+* `sum`
+
+__Graphs__:
+
+* `barplot` (different from the `barchartGC` function used in previous tutorials)
+
+
+* * *
+
+### Tutorial 07: Estimating proportions
+
+__Getting started__:
+
+* `library` 
+
+__Data frame structure__: 
+
+* `str`
+* `inspect`
+* `length` 
+
+__Tabulation__:
+
+* `xtabs`
+* `prop.table`
+
+__Simulation__:
+
+* `rep`
+* `set.seed`
+* `sample`
+* `do`
+
+__Math__:
+
+* `sum`  
+* `sqrt`
+
+__Data management and exploration__:
+
+* `mean`
+
+__Graphs__:
+
+* `barplot`
+
+__Binomial distribution__:
+
+* `binom.confint` (from the `binom` package)
+
+* * *
+
+### Tutorial 08: Binomial distribution
+
+__Getting started__:
+
+* `library` 
+
+__Data frame structure__: 
+
+* `str`
+* `inspect`
+* `names`
+
+__Tabulation__:
+
+* `xtabs`
+
+__Simulation__:
+
+* `set.seed`
+* `sample`
+* `do`
+* `seq`
+
+__Math__:
+
+* `sum`
+
+__Graphs__:
+
+* `barplot`
+
+__Binomial distribution__:
+
+* `dbinom` (base package)
+* `binom.confint` (from the `binom` package)
+* `binom.test` (from the `binom` package)
+
+* * *
+
+### Tutorial 09: Goodness of fit tests
+
+__Getting started__:
+
+* `library` 
+
+__Data frame structure__: 
+
+* `str`
+* `inspect`
+
+__Create tables__:
+
+* `kable`
+
+__Math__:
+
+* `sum`
+* `curve` (base package) 
+
+__Graphs__:
+
+* `barplot`
+* `segments`
+
+__Goodness of fit__:
+
+* `dchisq` (base package)
+* `qchisq` (base package)
+* `chisqtestGC` (from the `tigerstats` package)
+
+* * *
+
+### Tutorial 10: Odds ratio
+
+__Getting started__:
+
+* `library` 
+
+__Data frame structure__: 
+
+* `inspect`
+
+__Tabulation__:
+
+* `xtabs`  
+
+__Manipulate data__:
+
+* `t` (base package, for transposing matrix)
+
+__Graphs__:
+
+* `mosaicplot`
+
+__Odds ratio__:
+
+* `oddsratio` (from the `epitools` package)
+
+* * *
+
+### Tutorial 11: Contingency analysis
+
+__Getting started__:
+
+* `library` 
+
+__Data frame structure__: 
+
+* `inspect`
+* `names`
+* `levels`
+
+__Tabulation__:
+
+* `xtabs`
+* `prop.table`
+
+__Manipulate data__:
+
+* `t` (base package, for transposing matrix)
+
+__Graphs__:
+
+* `mosaicplot`
+
+__Contingency analysis__:
+
+* `fisher.test`
+* `chisq.test`
+
+* * *
+
+### Tutorial 12: The normal distribution
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+
+__Data frame structure__: 
+
+* `head`
+* `inspect` (`tigerstats` / `mosaic` packages)
+
+__Simulation__:
+
+* `set.seed`
+* `sample`
+* `do`
+* `mean`
+
+__Normal distribution__:
+
+* `rnorm`
+* `pnormGC` (`tigerstats` package)
+* `qnormGC` (`tigerstats` package)
+
+__Graphs__:
+
+* `histogram`
+
+* * *
+
+### Tutorial 13: Comparing one mean to a hypothesized value
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+
+__Data frame structure__: 
+
+* `head`
+* `inspect` (`tigerstats` / `mosaic` packages)
+
+__The "t" distribution__:
+
+* `pt`
+* `qt`
+* `t.test` (`mosaic` package loaded as part of the `tigerstats` package)
+
+__Graphs__:
+
+* `histogram`
+* `hist`
+
+* * *
+
+### Tutorial 14: Comparing means among 2 groups or categories
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+
+__Data management / manipulation__: 
+
+* `inspect` (`tigerstats` / `mosaic` packages)
+* `levels`
+* `filter` (`tidyr` package)
+* `xtabs` (`tigerstats` / `mosaic` packages)
+
+__The "t" distribution__:
+
+* `qt`
+* `t.test` (`mosaic` package loaded as part of the `tigerstats` package)
+
+__Graphs__:
+
+* `hist`
+* `boxplot`
+* `qqnorm`
+* `qqline`
+* `segments`
+* `par`  
+
+__Assumptions__:  
+
+* `leveneTest` (`car` package)
+* `qqnorm`
+* `qqline`
+* `shapiro.test`
+
+* * *
+
+### Tutorial 15: Comparing means among more than 2 groups using ANOVA
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+
+__Data management / manipulation__: 
+
+* `inspect` (`tigerstats` / `mosaic` packages)
+* `levels`
+* `head`
+* `xtabs` (`tigerstats` / `mosaic` packages)
+* `levels`
+* `ordered`
+* `names`
+
+__Graphs__:
+
+* `stripchart`
+* `ggstripchart` (from the `ggpubr` package)
+* `qqnorm`
+* `qqline`
+* `par`  
+
+__Assumptions__:  
+
+* `leveneTest` (`car` package)  
+
+__ANOVA__:
+
+* `lm`
+* `anova`
+* `summary`
+
+__ANOVA Table__:  
+
+* `names`
+* `colSums`
+* `as.data.frame`
+* `rbind`
+* `kable` (`knitr` and `kableExtra` packages)
+
+__Post-hoc tests__:  
+
+* `TukeyHSD`
+* `annotate` (`ggplot2` package, loaded with `ggpubr` package)
+
+
+* * *
+
+### Tutorial 16: No longer exists; see Extra Tutorial: "Checking assumptions and data transformations"
+
+* * *
+
+### Tutorial 17: Correlation analysis
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+
+__Data management / manipulation__: 
+
+* `inspect` (`tigerstats` / `mosaic` packages)
+* `head`
+
+__Graphs__:
+
+* `plot`
+* `jitter`
+
+__Correlation__:
+
+* `cor.test`
+
+* * *
+
+### Tutorial 18: Regression analysis
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+
+__Data management / manipulation__: 
+
+* `inspect` (`tigerstats` / `mosaic` packages)
+* `head`
+
+__Data visualization__:
+
+* `plot`
+* `jitter`
+
+__Assumptions__:
+
+* `qqnorm`
+* `qqline`
+* `residuals`
+* `shapiro.test`
+* `abline`
+
+__Regression__:
+
+* `lm`  
+* `summary`  
+* `confint`
+* `visreg` (from the `visreg` package)
+
+__Prediction__:  
+
+* `predict.lm`
+* `seq`
+* `data.frame`
+* `sample`
+* `points`
+
+* * *
+
+### Extra tutorial: Tables in R Markdown
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+
+__Data frame structure__: 
+
+* `names`
+* `inspect` (`tigerstats` / `mosaic` packages)
+
+__Graphs__:
+
+* `stripchart` (`lattice` package)
+
+__Descriptive stats__:
+
+* `favstats` (`tigerstats` and `mosaic` packages)
+
+__Tables__ (all from the `kableExtra` package):
+
+* `kable`
+* `kable_styling` 
+* `add_header_above`
+* `kable_as_image`  
+
+* * *
+
+### Extra tutorial: Checking assumptions and data transformations
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+
+__Testing assumptions__: 
+
+* `head`
+* `hist`
+* `qqnorm`
+* `qqline`
+* `par`  
+* `plot`
+* `shapiro.test`
+* `leveneTest` (from the `car` package)
+* `inspect` (from the `tigerstats` package)
+
+__Transformations__:  
+
+* `log`
+* `log10`
+* `logit` (from the `car` package)
+* `invlogit` (from the `arm` package)
+* `exp`
+
+* * *
+
+### Extra tutorial: Checking assumptions and data transformations
+

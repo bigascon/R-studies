@@ -1,0 +1,356 @@
+---
+title: "Correlation: testing association between two numeric variables"
+output:
+  html_document:
+    css: tutorial.css
+    fig_caption: yes
+    highlight: pygments
+    theme: simplex
+    toc: yes
+    toc_float: yes
+---
+
+```{r global_options, include = FALSE}
+knitr::opts_chunk$set(eval = TRUE, echo = TRUE, cache = TRUE)
+```
+This page was last updated on `r format(Sys.time(), '%B %d, %Y')`.
+
+* * *
+
+## Getting started
+
+In this tutorial you will:  
+
+* learn about using correlation analyses to test hypotheses about associations between two numerical variables  
+* learn about the assumptions of correlation analysis  
+* learn parametric and non-parametric methods for conducting correlation analysis
+
+* * *
+
+### Required packages
+
+* `tigerstats`
+
+Load the packages:  
+
+```{r, message = FALSE, warning = FALSE}
+library(tigerstats)
+```
+
+* * *
+
+### Required data
+
+The "wolf.csv" and "trick.csv" datasets (discussed in examples 16.2 and 16.5 in the text, respectively).  
+
+```{r}
+wolf <- read.csv(url("https://people.ok.ubc.ca/jpither/datasets/wolf.csv"), header = TRUE)
+trick <- read.csv(url("https://people.ok.ubc.ca/jpither/datasets/trick.csv"), header = TRUE)
+```
+
+* * *
+
+### Data exploration
+
+The `wolf` dataset includes inbreeding coefficients for wolf pairs, along with the number of the pairs' pups surviving the first winter.  
+
+```{r}
+head(wolf)
+inspect(wolf)
+```
+
+We see that there are 24 observations for each of the two variables, and no missing values.  
+
+Now let's explore the `trick` dataset:
+
+```{r}
+head(trick)
+inspect(trick)
+```
+
+It includes 21 observations, no missing values, and two integer variables: "years", and "impressivenessScore". Reading example 16.5 from the text, we see that the latter variable is a form of ranking variable.  
+
+* * *
+
+## Pearson correlation analysis
+
+It is commonplace in biology to wish to quantify the strength of a linear association between two numeric variables. For example, is testosterone level associated with the age at which hair loss is initiated in male humans?  In such cases, the first method to consider is the **Pearson correlation analysis**.   
+
+* * *
+
+### Reminder: Hypothesis testing
+
+**Follow these steps when conducting a hypothesis test:**
+
+* State the null and alternative hypotheses  
+* Set an $\alpha$ level  
+* Identify the appropriate test and test statistic  
+* Provide an appropriate figure, including figure caption, to visualize the data  
+* Provide a line or two interpreting your figure, and this may inform your concluding statement  
+* Assumptions  
+    + state the assumptions of the test  
+    + use appropriate figures and / or tests to check whether the assumptions of the statistical test are met
+    + transform data to meet assumptions if required
+    + if assumptions can't be met (e.g. after transformation), use non-parametric test and repeat steps 1 through 4
+    + if data transformation is required, then do the transformation and provide another appropriate figure, including figure caption, to visualize the transformed data, and a line or two interpreting this new figure  
+* Conduct the test, and report the test statistic and associated _P_-value  
+* Draw the appropriate conclusion and communicate it clearly  
+* Calculate and include a confidence interval (e.g. for *t*-tests and Pearson correlation analysis) or *R*^2 value (e.g. for ANOVA and least-squares regression) when appropriate  
+
+* * *
+
+### Hypothesis statements
+
+Researchers were interested in whether inbreeding coefficients of the wolf litters were associated with the number of pups surviving their first winter.  
+
+The hypothesis statements should be framed in the context of the question:
+
+**H~0~**: Inbreeding coefficients are not associated with the number of pups surviving the first winter.  
+**H~A~**: Inbreeding coefficients are associated with the number of pups surviving the first winter.  
+
+We'll set $\alpha$ = 0.05.  
+
+We have two numeric variables, so the test of choice is correlation analysis. This analysis yields a sample-based measure called Pearson's correlation coefficient, or *r*.  This provides an estimate of $\rho$ - the true correlation between the two variables in the population.  The absolute magnitude of *r* (and $\rho$) reflects the strength of the linear association between two numeric variables in the *population*.  
+
+Although we use *r* as a measure of the strength of the linear association, when we conduct a hypothesis test the test statistic used to test the null hypothesis is actually *t* (which we've seen before).
+
+Having decided on Pearson correlation analysis, we can be more specific with our hypothesis statements:  
+
+**H~0~**: Inbreeding coefficients are not associated with the number of pups surviving the first winter ($\rho$ = 0).  
+**H~A~**: Inbreeding coefficients are associated with the number of pups surviving the first winter ($\rho$ $\neq$ 0).  
+
+* * *
+
+### Visualize the data      
+
+We learned in an earlier [tutorial](https://people.ok.ubc.ca/jpither/modules/Visualizing_association_two_variables.html#visualizing_association_between_two_numeric_variables) that the best way to visualize an association between two numeric variables is with a scatterplot, and that we can create a scatterplot using the `plot` function:  
+
+```{r fig.cap = "Figure 1: The association between inbreeding coefficient and number of surviving wolf pups (n = 24).", fig.width = 4.2, fig.height = 4}
+plot(nPups ~ inbreedCoef, data = wolf, 
+           xlab = "Inbreeding coefficient",
+           ylab = "Number of surviving pups",
+           pch = 1,  # pch changes the symbol type
+           col = "firebrick",
+           las = 1)  # orients y-axis tick labels properly
+```
+
+We notice that there doesn't appear to be the correct number of points (24) in the scatterplot, so there must be some overlapping.  
+
+To remedy this, we use the `jitter` function on the resopnse variable (`nPups`) to shift the y-values slightly so that they can be seen.  
+First let's set the seed for the random number generator, so everyone gets the same plot.  
+
+
+```{r}
+set.seed(246)
+```
+
+Now create the figure:  
+
+```{r fig.cap = "Figure 2: The association between inbreeding coefficient and number of surviving wolf pups (n = 24). Values have been shifted slightly in the Y direction to improve legibility.", fig.width = 4.2, fig.height = 4}
+plot(jitter(nPups) ~ inbreedCoef, data = wolf, 
+           xlab = "Inbreeding coefficient",
+           ylab = "Number of surviving pups",
+           pch = 1,  # pch changes the symbol type
+           col = "firebrick",
+           las = 1)  # orients y-axis tick labels properly
+```
+
+That's better!  
+
+* * *
+
+### Interpreting a scatterplot
+
+In an earlier [tutorial](https://people.ok.ubc.ca/jpither/modules/Visualizing_association_two_variables.html#interpreting_and_describing_a_scatterplot), we learned how to properly interpret a scatterplot, and **what information should to include in your interpretation**. Be sure to consult that tutorial.   
+
+> We see in Figure 2 that the association between the inbreeding coefficient and number of surviving pups is negative, linear, and moderately strong.  There are no apparent outliers to the association.  
+
+* * *
+
+### Assumptions of correlation analysis
+
+Correlation analysis assumes that:  
+
+* the sample of individuals is a random sample from the population   
+* the measurements have a **bivariate normal distribution**, which includes the following properties:  
+    + the relationship between the two variables (X and Y) is linear  
+    + the cloud of points in a scatterplot of X and Y has a circular or elliptical shape  
+    + the frequency distributions of X and Y separately are normal  
+
+* * *
+
+### Checking the assumptions of correlation analysis
+
+The assumptions are most easily checked using the scatterplot of X and Y.   
+
+What to look for as potential problems in the scatterplot:  
+
+* a "funnel" shape  
+* outliers to the general trend  
+* non-linear association  
+
+If any of these patterns are evident, then one should opt for a non-parametric analysis (see below).  
+
+>Based on Figure 2, there doesn't seem to be any indications that the assumptions are not met, so we'll proceed with testing the null hypothesis.  
+
+**NOTE:** Be careful with "count" type variables such as "number of pups", as these may not adhere to the "bivariate normality" assumption. If the variable is restricted to a limited range of possible counts, say zero to 5 or 6, then the association should probably be analyzed using a non-parametric test (see below). The variable "number of pups" in this example is borderline OK...   
+
+* * *
+
+### Conduct the correlation analysis  
+
+Conducting a correlation analysis is done using the "cor.test" function from the `mosaic` package, loaded as part of the `tigerstats` package. Be sure to select the `mosaic` package version of the function when viewing the help:  
+
+```
+?cor.test
+```
+
+And here's how to implement it:  
+
+```{r}
+wolf.cor <- cor.test(nPups ~ inbreedCoef, data = wolf, method = "pearson", conf.level = 0.95)
+wolf.cor
+```
+
+A lot of information is included in the output.  
+
+The `cor` value represents the value of Pearson's correlation coefficient *r*, and the output also includes the confidence interval for *r*.  
+
+The output includes the observed value of *t*, which is used to test the significance of *r*, with the degrees of freedom df = n - 2, and the *P*-value associated with the observed value of *t*.  
+
+Despite the use of the *t* test statistic, **we do not report _t_ in our concluding statement** (see below). 
+
+* * *
+
+### Concluding statement
+
+Here is an example of a good concluding statement:  
+
+> Litter size is significantly negatively correlated with the inbreeding coefficient of the parents (Fig. 1; Pearson _r_ = `r round(wolf.cor$estimate, 2)`; 95% confidence limits: `r c(round(wolf.cor$conf.int[1], 3), round(wolf.cor$conf.int[2], 3))`; df = `r wolf.cor$parameter`; _P_ = `r round(wolf.cor$p.value, 3)`).  
+
+**NOTE**: The correlation coefficient _r_ is a unitless measure of effect size that can be directly compared across studies, regardless of what numerical variables are being associated. Very handy for meta-analyses!!  
+
+* * *
+
+## Rank correlation (Spearman's correlation)
+
+If the assumption of bivariate normality is not met for Pearson correlation analysis, then we use Spearman rank correlation.  
+
+For example, if one or both of your numerical variables (X and / or Y) is actually a discrete, ordinal numerical variable to begin with (e.g. an attractiveness score that ranges from 1 to 5), then this automatically necessitates the use of Spearman rank correlation, because it does not meet the assumptions of bivariate normality. (This is why one needs to be careful with count data).    
+
+We'll use the `trick` dataset for this example, and the data are described in example 16.5 in the text.  
+
+* * *
+
+### Hypothesis statements
+
+The null and alternative hypotheses are:  
+
+**H~0~**: There is no linear correlation between the ranks of the impressiveness scores and time elapsed until the writing of the description ($\rho$~S~ = 0).  
+**H~A~**: There is a linear correlation between the ranks of the impressiveness scores and time elapsed until the writing of the description ($\rho$~S~ $\neq$ 0).    
+
+Let's use $\alpha$ = 0.05.  
+
+As shown in the hypothesis statements above, we are interested in $\rho$~S~, which is the true correlation between the *ranks* of the variables in the population. We estimate this using *r*~S~, Spearman's correlation coefficient.  
+
+Unlike in the Pearson correlation case (above), which uses *t* as a test statistic, the rank correlation analysis simply uses the actual Spearman correlation coefficient as the test statistic.  
+
+* * *
+
+### Visualize the data
+
+Let's visualize the association, again using the "jitter" command on the Y variable to help see overlapping values:  
+
+
+```{r fig.cap = "Figure 3: Scatterplot of the impressiveness of written accounts of the Indian rope trick by firsthand observers and the number of years elapsed between witnessing the event and writing the account (_n_ = 21). Values have been shifted slightly in the Y direction to improve legibility.", fig.width = 4.2, fig.height = 4}
+plot(jitter(impressivenessScore) ~ years, data = trick, 
+           ylab = "Impressiveness score",
+           xlab = "Years elapsed",
+           pch = 1,  # pch changes the symbol type
+           col = "firebrick",
+           las = 1)  # orients y-axis tick labels properly
+```
+
+
+> In Figure 3 we see a positive and moderately strong association between the impressiveness of written accounts of the Indian rope trick by firsthand observers and the number of years elapsed between witnessing the event and writing the account.  
+
+* * *
+
+### Assumptions of the test
+
+Spearman rank correlation assumes that:  
+
+* the observations are a random sample from the population  
+* the relationship between the *ranks* of the two numerical variables is linear  
+
+* * *
+
+### Checking assumptions
+
+As in the Pearson correlation analysis, we use the scatterplot to check the assumptions.  
+
+> As shown in Figure 3, the ranks appear to be linearly related.  
+
+* * *
+
+### Conduct the test
+
+We use the same command "cor.test" to conduct the test, but change the "method" argument accordingly:  
+
+
+```{r}
+trick.spearman <- cor.test(impressivenessScore ~ years, data = trick, method = "spearman")
+trick.spearman
+```
+
+**NOTE**: You may get a warning message, simply saying that it can't compute exact _P_-values when there are ties in the ranked data. Don't worry about this.  
+
+The output includes the value for "rho" which is actually the value for *r*~S~. This is the value you report (rounded to 2 decimal places).  
+
+It also includes a value of "S", but we don't report this.  
+
+Lastly, it reports the *P*-value associated with the observed value of *r*~S~.  
+
+**NOTE**: There is no confidence interval reported with Spearman correlation analysis, so there is no need to report one in the concluding statement for a rank correlation.  
+
+* * *
+
+### Concluding statement
+
+As in the preceding Pearson correlation example, we can refer to the Figure in the parentheses of our concluding statement. Note also that we report _n_ rather than degrees of freedom.  
+
+>The rank of impressiveness scores of written accounts of the Indian rope trick by firsthand observers is significantly positively correlated with the rank of number of years elapsed between witnessing the event and writing the account (Fig. 2; Spearman _r_~S~ = `r round(trick.spearman$estimate, 2)`; n = 21; _P_ < 0.001).  
+
+* * *
+
+## List of functions
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+
+__Data management / manipulation__: 
+
+* `inspect` (`tigerstats` / `mosaic` packages)
+* `head`
+
+__Graphs__:
+
+* `plot`
+* `jitter`
+
+__Correlation__:
+
+* `cor.test`
+
+* * *
+
+## Markdown File
+
+You can access the Rmd file that created this page [here](https://people.ok.ubc.ca/jpither/modules/Correlation.Rmd). For it to work, you also need to download a "css" file linked [here](https://people.ok.ubc.ca/jpither/modules/tutorial.css) (called "tutorial.css"), and place it in a directory one down from your working directory.  
+
+
+
+

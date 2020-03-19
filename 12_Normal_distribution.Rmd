@@ -1,0 +1,358 @@
+---
+title: "The normal distribution"
+output:
+  html_document:
+    css: tutorial.css
+    fig_caption: yes
+    highlight: pygments
+    theme: simplex
+    toc: yes
+    toc_float: yes
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(eval = TRUE)
+library(tigerstats, warn.conflicts = FALSE, quietly = TRUE)
+lattice.options(default.theme = standard.theme(color = FALSE))
+```
+This page was last updated on `r format(Sys.time(), '%B %d, %Y')`.
+
+* * *
+
+## Getting started
+
+In this tutorial we will learn about the following:
+
+* constructing a Gaussian (normal) distribution
+* the **Central Limit Theorem**
+* the **standard normal distribution**
+* calculating *Z*-scores
+* calculating *P*-values using a normal distribution
+
+* * *
+
+### Required packages
+
+* `tigerstats`
+
+```
+library(tigerstats)
+```
+
+* * *
+
+### Required data
+
+* the "flu" dataset.  These are the data associated with the Spanish Flu example in Chapter 10 of the text.  
+
+```{r}
+flu <- read.csv(url("https://people.ok.ubc.ca/jpither/datasets/flu.csv"), header = TRUE)
+inspect(flu)
+head(flu)
+```
+
+
+* * *
+
+## The Gaussian (normal) distribution
+
+The formula for a normal or "Gaussian" distribution is:  
+
+```{r fig.width = 2, fig.height = 0.5, echo = FALSE}
+library(png)
+img <- readPNG("./more/normal_equation.png")
+grid.raster(img)
+```
+
+To characterize a normal distribution, one needs only two parameters: $\mu$ and $\sigma$.  
+
+* * *
+
+## Generating a normal distribution
+
+The `rnorm` function provides the means to generate `n` values drawn from a population with a specific mean and standard deviation.  
+```
+?rnorm
+```
+
+Using this function we can essentially pretend that, in the background, R creates a vast population in which the variable of interest exhibits a normal distribution with the parameter values ($\mu$ and $\sigma$) we specify. Then, we take a random sample of size _n_ from this population.  
+
+This function, as with similar functions you've used previously, includes an algorithm that relies on a random number generator. So, if we want to ensure that we all get the same set of values in our sample, we can use the `set.seed` command, which sets the seed value for the program's random number generator.  
+
+```{r}
+set.seed(50)
+example.norm <- rnorm(n = 100, mean = 5, sd = 1.5)
+```
+
+Let's also visualize the resulting frequency distribution with a histogram:
+
+```{r fig.cap = 'Figure 1: Histogram of n = 100 values drawn from a normal distribution with mean = 5 and sd = 1.5', fig.width = 5, fig.height = 4}
+histogram(~ example.norm, 
+          type = "count", 
+          col = "grey",
+          xlab = "Value",
+          ylab = "Frequency",
+          main = "")
+```
+
+* * *
+
+1. Generating normal distributions
+
+Repeat the above commands using a few different sample sizes (*n*) and values for the mean and standard deviation.  
+
+Knowing how to generate data with known characteristics (e.g. normal distribution with particular mean and sd), is a handy skill.  Often we wish to test out ideas with such "fake" or "made-up" data, specifically data that exhibit particular properties.  
+
+* * *
+
+## The Central Limit Theorem - a simulation
+
+For this example we'll use the flu dataset described in example 10.6 in the text (page 286).  
+
+Let's look at a histogram showing the frequency distribution of the ages at death in Switzerland in 1918, and make it look like the figure in the text book:  
+
+```{r fig.cap = 'Figure 2: Frequency distribution of age at death for 75034 people in Switzerland in 1918 during the Spanish flu epidemic', fig.height = 4, fig.width = 5}
+histogram(~ age, data = flu, 
+          breaks = seq(from = 0, to = 102, by = 2), # this provides the breaks for the bins
+          type = "count", 
+          col = "firebrick",
+          xlab = "Age at death (yrs)",
+          ylab = "Frequency",
+          main = "")
+```
+  
+
+You can see that there are multiple modes in this frequency distribution, and overall the distribution is highly non-normal.  
+
+According to the **Central Limit Theorem**, the sum or mean of a large number of measurements randomly sampled from a non-normal population is approximately normally distributed.  
+
+Here we will build on what we learned in the [Sampling, Estimation, and Uncertainty](https://people.ok.ubc.ca/jpither/modules/Sampling_Estimation_Uncertainty.html) tutorial to help gain an appreciation of the Central Limit Theorem. 
+
+The code below first sets the seed, then defines a sample size (_n_) to use when drawing a random sample from the flu dataset.  
+
+It then tells R the **number of trials** for our simulation, 10000.
+
+The `sample` command is taking a random sample (without replacement) of size _n_ from the ages in the dataset.  
+
+The `mean` command is calculating the mean of the ages within the given sample.  
+
+The `do` function is telling R to repeat the `mean` and `sample` procedure **number of trials** times, and to put the resulting set of means in a vector called `samp.data`.  
+
+The procedure will take 10 or so seconds to complete, so be patient.  
+
+```{r}
+set.seed(42) # set the seed
+n <- 20  
+number.of.trials <- 10000
+samp.data <- do(number.of.trials) * mean(sample(flu$age, size = n, replace = FALSE))
+```
+
+In the [Sampling, Estimation, and Uncertainty](https://people.ok.ubc.ca/jpither/modules/Sampling_Estimation_Uncertainty.html) tutorial, we used the `sapply` function to repeat the sampling procedure 10000 times... here we use the much handier `do` function.  
+
+Now produce a histogram showing the freqency distribution of the 10000 sample means.  
+
+Be sure to include defined x- and y-axis limits (the `xlim` and `ylim` arguments), so that subsequent histograms are shown on the same scale.
+
+```{r fig.cap = 'Figure 3: Frequency distribution of 10000 sample means for the variable age at death.', fig.width = 4, fig.height = 4.5}
+histogram(~ samp.data, 
+          type = "count",
+          xlim = c(-10, 100),
+          ylim = c(0, 3000),
+          col = "firebrick",
+          las = 1,
+          xlab = "Mean age (yrs)",
+          ylab = "Frequency",
+          main = paste("Sample size = ", n, sep =" ")) # show "n" in heading
+```
+
+
+* * *
+
+1. Simulate central limit theorem
+
+* Repeat the above commands, but change _n_ to 2.  
+* Repeat the commands again, but change _n_ to 40.  
+
+What happens to the frequency distribution in each case?  
+Compare your frequency distribution of sample means to the histogram showing all the age data (Figure 2).  
+
+* * *
+
+## The standard normal distribution 
+
+The Gaussian (normal) distribution is a **continuous probability distribution**.  
+
+The **standard normal distribution** is a distribution that has a mean $\mu$ = 0 and standard deviation $\sigma$ = 1.  
+
+Any variable that exhibits a normal distribution in the population can be re-scaled to fit a standard normal distribution, so long as we know the population mean ($\mu$) and standard deviation ($\sigma$).  
+
+Why would we wish to re-scale a variable to fit a standard normal distribution?  
+
+Doing so allows us to:  
+
+* easily quantify how far a particular value is from the population mean, in units of "standard deviation" - a useful common currency for describing the unusualness of values.  We call this quantity a **Z-score**, or a **standard normal deviate** 
+* calculate a probability value, i.e. *P*-value, associated with a particular **Z-score** 
+
+* * *
+
+### Calculating *Z*-scores
+
+Consider the following example: 
+
+The height of adult males in Great Britain is normally distributed, and has $\mu$ = 177.0 cm and $\sigma$ = 7.1 cm.  
+
+My uncle is 192cm tall. He is clearly tall compared to the average height of males in the population. But how much taller?  
+
+We can calculate how far his height is from the population mean in units of standard deviations.  
+
+To do so by hand, we use this formula:  
+
+$$Z = \frac{Y - \mu}{\sigma}$$
+
+So, plugging in the numbers:  
+
+$$Z = \frac{192 - 177}{7.1}$$ 
+$$Z = 2.11$$   
+
+So my uncle's height is 2.11 standard devations above the mean height for British males.  
+
+
+* * *
+
+### Calculating probabilities with a normal distribution
+
+Once we have calculated a *Z*-score, we can calculate the *P*-value associated with that *Z*-score.  
+
+Let's re-visit the male height example from above.  
+
+MI-5 (the spy agency of the British government) does not want male spies who are taller than 180.3 cm (they would stick out in a crowd too much).  
+
+What proportion of British adult men are excluded from a career as a spy for MI-5?  
+
+That is, what is Pr[_height_ > 180.3] ?  
+
+In R, we can use the `pnormGC` function from the `tigerstats` package (a wrapper of the `pnorm` function in the base package) to calculate probabilities from a normal distribution, and visualize the area under the curve.  
+
+```
+library(tigerstats)
+?pnormGC
+```
+
+You can find out more about the `pnormGC` function at the TigerStats website [here](http://homerhanumat.com/tigerstats/pnormGC.html).  
+
+So, for the current example:  
+
+```{r fig.width = 5, fig.height = 4}
+pnormGC(180.3, region = "above", mean = 177, sd = 7.1, graph = TRUE)
+```
+
+We see that about `r round(100*pnormGC(180.3, region = "above", mean = 177, sd = 7.1, graph = FALSE),0)` percent of British males would be excluded from service as a MI-5 spy.  
+
+R does the conversion to a *Z*-score for us, and calculates the area under the curve.  
+
+If we didn't have a computer, we could look up areas under the curve from a **Table of Z-scores**, such as the one in the text on page 706-707.  
+
+* * *
+
+### Calculating probabilities of sample means
+
+The standard normal distribution can be used to calculate the probability of drawing a sample with a mean in a given range, assuming we know $\mu$ and $\sigma$:
+
+$$Z = \frac{\bar{Y} - \mu}{\sigma_\bar{Y}}$$
+
+The quantity $\sigma_\bar{Y}$ is the standard deviation of the sampling distribution of $\bar{Y}$, also known as the **standard error of the mean**.  
+
+**Example**:  
+
+Baby weights are normally distributed in the population and have a mean $\mu$ = 3339g and standard deviation $\sigma$ = 573g.  
+
+What is the probability that a random sample of *n* = 80 babies would yield a mean weight of at least 3370g?  
+
+In other words, what is Pr[$\bar{Y}$ > 3370]?  
+
+Here, $$\sigma_\bar{Y} = \frac{\sigma}{\sqrt{n}} = \frac{573}{\sqrt{80}} = 64.1$$  
+
+From this we calculate the *Z*-score:
+
+$$Z = \frac{\bar{Y} - \mu}{\sigma_\bar{Y}} = \frac{3370 - 3339}{64.1} = 0.48$$
+
+In other words, Pr[$\bar{Y}$ > 3370] = Pr[*Z* > 0.48]  
+
+We can look up the associated probability value in Table B in the text (p 706).  
+
+Alternatively, we can calculate the probability in R using the `pnormGC` function, and making sure to enter the **standard error of the mean** in the `sd` argument, rather than the standard deviation (because here we're dealing with the distribution of means):  
+
+```{r fig.width = 5, fig.height = 4}
+pnormGC(3370, region = "above", mean = 3339, sd = 64.1, graph = TRUE)
+```
+
+Thus, Pr[$\bar{Y}$ > 3370] = `r round(pnormGC(3370, region = "above", mean = 3339, sd = 64.1, graph = FALSE), 2)`.  
+
+
+* * *
+
+1. Calculate a probability  
+
+MI-5 also discriminates against shorter people... no spies can be less than 173.7cm tall.  
+
+* What proportion of the male population in Great Britain qualify, with respect to height, for being a spy?  
+
+That is, what is Pr[173.7 > _height_ > 180.3] ?  
+
+**HINT**: look at the available options for the `region` argument to the `pnormGC` function 
+
+* * *
+
+### Calculating percentiles from a normal population
+
+Consider the following question: What height is associated with the first quartile in the population?  
+
+In notation format, this looks like:  
+
+Pr[_height_ < X] = 0.25
+
+For this problem, we are given the probability *P*, and need to find the corresponding value of *Z*.  
+
+For this, we use the `qnormGC` function from the `tigerstats` package (a wrapper of the `qnorm` function in the base package):  
+
+```
+?qnormGC
+```
+
+```{r fig.width=5, fig.height = 4}
+qnormGC(area = 0.25, region = "below", mean = 177, sd = 7.1, graph = TRUE)
+```
+
+We see that `r round(qnormGC(area = 0.25, region = "below", mean = 177, sd = 7.1, graph = TRUE),1)`cm is the height associated with the first quartile in the population.  
+
+* * *
+
+## List of functions
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+
+__Data frame structure__: 
+
+* `head`
+* `inspect` (`tigerstats` / `mosaic` packages)
+
+__Simulation__:
+
+* `set.seed`
+* `sample`
+* `do`
+* `mean`
+
+__Normal distribution__:
+
+* `rnorm`
+* `pnormGC` (`tigerstats` package)
+* `qnormGC` (`tigerstats` package)
+
+__Graphs__:
+
+* `histogram`

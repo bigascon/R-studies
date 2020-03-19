@@ -1,0 +1,398 @@
+---
+title: "Goodness of fit tests"
+output:
+  html_document:
+    css: tutorial.css
+    fig_caption: yes
+    highlight: pygments
+    theme: simplex
+    toc: yes
+    toc_float: yes
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(eval = TRUE)
+library(knitr, warn.conflicts = FALSE, quietly = TRUE)
+library(kableExtra, warn.conflicts = FALSE, quietly = TRUE)
+knitr::opts_chunk$set(echo = TRUE)
+options(knitr.table.format = "html")
+library(tigerstats, warn.conflicts = FALSE, quietly = TRUE)
+lattice.options(default.theme = standard.theme(color = FALSE))
+```
+This page was last updated on `r format(Sys.time(), '%B %d, %Y')`.
+
+* * *
+
+## Getting started
+
+In this tutorial we will learn about the following:
+
+* Conduct a $\chi$^2^ goodness of fit test using a **proportional model**
+
+* * *
+
+### Required packages
+
+Each of these packages has been used in previous tutorials:
+
+* load the `tigerstats` package
+* load the `knitr` package  
+
+This is a new one:  
+
+* install and load the `kableExtra` package  
+
+```
+install.packages("kableExtra")
+```
+
+* * *
+
+### Required data
+
+Import the `nhlbirths.csv` data set and look at its structure:
+
+```{r}
+nhlbirths <- read.csv(url("https://people.ok.ubc.ca/jpither/datasets/nhlbirths.csv"), header = TRUE)
+str(nhlbirths)
+```
+
+This data frame has only 12 rows, so let's look at it all:
+
+```{r}
+nhlbirths
+```
+
+This dataset shows the number of NHL hockey players (active in 2006) that were born in each month of the year ("num players born" variable).  It also shows the total number of births per month in the general population, over the years 2000-2005.  
+
+And now let's produce a nicer table showing just the first two columns.  
+
+* * *
+
+### Presenting a nice HTML table using R Markdown  
+
+**OPTIONAL**: This table formatting section is optional, but recommended  
+
+Let's calculate how many players we have birth month information for:
+
+```{r}
+num.players <- sum(nhlbirths$num_players_born)
+num.players
+```
+
+OK, so we have data for `r num.players` players.  
+
+We'll use the methods described in the [Generating tables in R Markdown](https://people.ok.ubc.ca/jpither/modules/Tables_markdown.html) tutorial:
+
+
+```{r echo = TRUE}
+kable(nhlbirths[,1:2], format = "html",  
+      caption = paste("Table 1: Frequency table of NHL player birth months for", num.players, "players active in 2006"),
+      digits = c(0, 0), align = "cc",
+      col.names = c("Month", "Number of players born")) %>%
+  kable_styling(full_width = FALSE, position = "left")
+```
+
+### Greek / math symbols in R Markdown
+
+You can produce the appropriate symbol for "chi-square" using this syntax:
+
+`$\chi$^2^` produces $\chi$^2^
+
+* * *
+
+## Refresher
+
+We are still learning how to test hypotheses about categorical data.  
+
+We previously learned how to test a hypothesis about frequencies or proportions when there are only **two** categories of interest, i.e. success and failure (a binary variable).  We used a **binomial test** for this purpose. Importantly, one can start with a categorical variable with more than two categories (e.g. hair colour), but if we define one particular category (e.g. red hair) as a "success", and the remaining categories as failures, then we have simplified our variable to a binary categorical variable.  
+
+For testing hypotheses about frequencies or proportions when there are *more* than two categories, we use **goodness of fit (GOF) tests**. We test how well an observed **discrete frequency (or probability) distribution** fits some specified expectation.  
+
+* * *
+
+## A GOF test example
+
+### The research hypothesis
+
+It is hypothesized that, among sports that use December 31st as the cutoff for age categories, kids born early in the calendar year (e.g. January) will have an advantage within their training years (i.e. when they're young kids learning to play), because they are comparatively larger than kids in the same age group but born later in the year.  
+
+Evidence consistent with this hypothesis would come in the form of a significant bias towards early-year birthdates among professional athletes.  
+
+* * *  
+
+### Steps to hypothesis testing
+
+* State the null (**H~0~**) and alternative (**H~A~**) hypotheses  
+* Set an $\alpha$ level (usually 0.05)  
+* Determine whether a one-tailed or two-tailed test is appropriate (usually the latter)
+* Identify the appropriate test statistic, and calculate the test statistic value using observed data  
+
+* Simulate data and use them to construct a __null distribution__ for the test statistic, under the assumption of a true null hypothesis  
+__OR__: Instead of simulating data to construct a __null distribution__, use an appropriate statistical test, which provides a theoretical null distribution
+
+* Evaluate any assumptions associated the statistical test
+* Use the __null distribution__ to determine the **_P_-value** associated with the observed test statistic  
+* Draw the appropriate conclusion and communicate it clearly  
+
+* * *
+
+### The statistical hypotheses
+
+Let's test our research hypothesis using the NHL data. We need to construct an appropriate null and alternative statistical hypothesis, and the null hypothesis must be specific about the expected proportions or frequencies under a true null hypothesis (i.e. when nothing is going on).
+
+If there is no advantage to professional athletes by being born earlier in the year, then the "null expectation" is that the birth dates of NHL players will be distributed among the 12 months *in direct proportion to the fraction of the year encompassed by each month*, i.e. the number of days in each month divided by 365 days.  
+
+This is an example of the **proportional model**.  
+
+**H~0~**: The probability of an NHL player being born in any given month is proportional to the fraction of days in that month out 365 days.  
+**H~A~**: The probability of an NHL player being born in any given month is not proportional to the fraction of days in that month out 365 days.  
+
+Thus, we are testing a hypothesis about a discrete probability distribution that includes one null proportion for *each* month of the year (thus 12 categories in the variable birth month).  
+
+This contrasts with a **binomial test**, in which we test a hypothesis about a single proportion.
+
+* * *
+
+### Visualizing the data
+
+Let's visualize the data, as one should always do when testing hypotheses. 
+
+First, we'll present the data frame in table format (see the section [above](https://people.ok.ubc.ca/jpither/modules/Goodness_of_fit_tests.html#presenting_a_nice_html_table_using_r_markdown) for info about presenting a table like this in R Markdown):
+
+```{r echo = TRUE}
+kable(nhlbirths[,1:2], format = "html",  
+      caption = paste("Table 2: Frequency table of NHL player birth months for", num.players, "players active in 2006"),
+      digits = c(0, 0), align = "cc",
+      col.names = c("Month", "Number of players born")) %>%
+  kable_styling(full_width = FALSE, position = "left")
+```
+
+Now we'll display a **bar chart**, which is appropriate for categorical data.  
+
+```{r fig.cap = paste("Figure 1: Frequency of births per month of", num.players, "NHL players active in 2006"), fig.height = 4, fig.width = 5}
+barplot(nhlbirths$num_players_born,
+        names.arg = nhlbirths$month,
+        las = 2,
+        xlab = "", # no room for x-axis label on graph
+        ylab = "Number of births")
+```
+
+You can see from Figure 1 that there does seem to be considerable variation in the number of births across the months, and that in general there are more births than expected in the early months of the calendar year, and fewer births than expected in the later months of the year. Now we need to figure how whether these discrepancies (i.e. differences from expected) are large enough to be considered interesting, i.e. to warrant rejecting the null hypothesis in favour of the alternative.  
+
+* * *
+
+### The $\chi$^2^ test statistic
+
+* The appropriate test statistic is the the $\chi$^2^ statistic, which measures the discrepancy between observed and expected frequencies  
+
+* The **$\chi$^2^ goodness-of-fit (GOF) test** is the appropriate test to use here: it evaluates discrepancies between observed frequencies (for more than 2 categories) and those expected based on some appropriate model.  
+
+For this example, we're using the **Proportional model**  
+
+* * *
+
+### The sampling distribution of the $\chi$^2^ test statistic
+
+* The **sampling distribution for the $\chi$^2^ statistic** changes shape depending upon the **degrees of freedom**, which equals the number of categories minus 1; so here, 12-1 = 11  
+
+You don't need to know how to create this graph, nor do you need to include this kind of graph in any assignment:  
+
+```{r fig.cap = "Figure 2: The chi-square probability distribution for degrees of freedom = 11.", fig.height = 4, fig.width = 4}
+curve(dchisq(x, df = 11),  
+      main = "", 
+      from = 0, to = 50,
+      ylab = "Probability density",
+      xlab = expression(paste(chi^2, " value")),
+      las = 1)
+```
+
+Note that this is a _continuous probability distribution_, so rather than asking "what's the probability of observing a given value of the test statistic", we're going to ask questions like "what's the probability of observing a test statistic value greater than some value"; thus, we're dealing with **areas under the curve**.  
+
+* * *
+
+### Calculating the expected proportions
+
+In the simplest scenario, the expected proportions for a **proportional model** would simply be 1 over the number of categories. Thus, in this example, it would be 1/12.  
+
+**However**, in our example the proportion associated with each month differs depending upon the number of days in the month: For example, the probability of giving birth in February, which as 28 days, is smaller (all else being equal) than in a month with 31 days such as January.  
+
+We therefore need to calculate the correct probabilities (proportions) for each month.  
+
+First let's figure out how many players we have birthdates for, i.e. the total count of birth dates:
+
+```{r}
+total.nhl.births <- sum(nhlbirths$num_players_born)
+total.nhl.births
+```
+
+Now let's create a vector object that holds the number of days in each month, and add this to the `nhlbirths` data frame as a new variable called `days.per.month`:  
+
+```{r}
+nhlbirths$days.per.month <- c(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+sum(nhlbirths$days.per.month) # make sure adds up to 365
+```
+
+Now let's calculate the expected **proportion of births per month**, and add this to the data frame as a new variable:  
+
+```{r}
+nhlbirths$expected.proportions <- nhlbirths$days.per.month / sum(nhlbirths$days.per.month)  # the expected proportions
+nhlbirths$expected.proportions
+```
+
+* * *
+
+### Calculating the expected frequencies
+
+When using R to conduct **Goodness of fit** tests, you provide the function with the **expected proportions** for each category (see below).  
+
+When conducting Goodness of fit tests **by hand**, you must calculate **expected frequencies**.  
+
+We use the expected proportions to calculate the **expected frequencies** of births in each month.  
+
+We do this by multiplying the expected proportions by the total number of NHL births:  
+
+```{r}
+nhlbirths$expected.freqs <- nhlbirths$expected.proportions * total.nhl.births
+nhlbirths$expected.freqs
+```
+
+**NOTE**: Expected frequencies do not need to be whole numbers (integers).  
+
+* * *
+
+### Assumptions of the $\chi$^2^ GOF test
+
+The $\chi$^2^ goodness of fit test has assumptions that **must be checked** prior to proceeding:
+
+* none of the categories should have an expected frequency of less than one
+* no more than 20% of the categories should have expected frequencies less than five 
+
+For our current example, these assumptions are met.
+
+* * *
+
+### Finding the critical value of $\chi$^2^ 
+
+When we conduct the goodness of fit test, R will tell us what the _P_-value is associated with our observed value of $\chi$^2^  
+
+However, we can also use the `qchisq` command to determine what the **critical value** of $\chi$^2^ is for our test; that is, beyond what value of $\chi$^2^ (along the x-axis in the sampling distribution figure above) is the area under the curve equal to our $\alpha$ = 0.05? 
+
+```
+?qchisq
+```
+
+**NOTE**: Values of $\chi$^2^ increase with increasing overall discrepancy between observed and expected frequencies. We therefore only consider the **right-hand tail** of the $\chi$^2^ distribution. This applies to all tests that use the $\chi$^2^ test statistic  
+
+Use this command to find the critical value of $\chi$^2^ for $\alpha$ = 0.05 and degrees of freedom = 11:  
+
+```{r}
+qchisq(0.05, 11, lower.tail = FALSE)
+```
+
+Let's show this critical value on our distribution:  
+
+```{r fig.cap = "Figure 3: The chi-square probability distribution for degrees of freedom = 11. The critical value for alpha = 0.05 is shown.", fig.height = 4, fig.width = 4}
+curve(dchisq(x, df = 11),  
+      main = "", 
+      from = 0,
+      to = 50,
+      ylab = "Probability density", 
+      xlab = expression(paste(chi^2, " value")), 
+      las = 1)
+segments(qchisq(0.05, 11, lower.tail = FALSE), 0, qchisq(0.05, 11, lower.tail = FALSE), 0.08, lwd = 2, col = "red")
+```
+
+So values of $\chi$^2^ that fall on or to the right of the red line will be considered "significant" at $\alpha$ = 0.05.  
+
+**NOTE**: The $\chi$^2^ probability distribution changes form depending upon the degrees of freedom. Thus, the __critical value__ associated with $\alpha$ = 0.05 will also change according to the degrees of freedom.  
+
+The text book includes a table of critical $\chi$^2^ values, for different degrees of freedom, on pages 703-705.  
+
+* * *
+
+### Conduct the $\chi$^2^ GOF test:
+
+For this test, we'll use the `chisqtestGC` function from the `tigerstats` package:
+
+```
+?chisqtestGC
+```
+
+This function can be used on raw data ("long format") or on summarized data.  
+
+We have the summarized data in our data frame, in the variable `num_players_born`. So, we need to provide this as a vector to the function.  We will show an example with raw data in future tutorials.  
+
+The function also optionally provides a graph of the probability distribution, with a shaded area corresponding to the area under the curve to the right of the observed test statistic value.  
+
+Also, we need to provide a vector of expected proportions to the argument `p`:
+
+```{r}
+chisq.results <- chisqtestGC(nhlbirths$num_players_born,
+            p = nhlbirths$expected.proportions,
+            graph = FALSE)
+chisq.results
+```
+
+The resulting output includes lots of information, including a table of observed frequencies, expected frequencies, and "Contr to chisq stat", which is the contribution of that observation to the overall $\chi$^2^ test statistic value. The bigger the value, the larger the discrepancy between the observed and expected frequencies.
+
+The output also includes the calculated test statistic value of $\chi$^2^, which here is `r round(chisq.results$statistic, 2)`.  This is clearly far beyond the critical value of $\chi$^2^ in the figure above.  
+
+Correspondintly, the _P_-value provided in the output (which represents the area under the curve beyond the calculated $\chi$^2^ value) is very small: `r round(chisq.results$p.value, 4)`.  
+
+* * *
+
+### Concluding statement
+
+The probability of birth for NHL players is not the same for each month ($\chi$^2^ goodness of fit test; $\chi$^2^ = `r round(chisq.results$statistic, 2)`; df = 11; _P_ < 0.001).  Based on our Figure 1 (showing the observed frequencies) we see that the frequency of births was high in January and February, and low in September and November.  More generally, there tends to be a higher frequency of births in the first half of the year compared to the second half. 
+
+**NOTE**: There is no need to report a confidence interval when reporting the results of a $\chi$^2^ goodness-of-fit test.  
+
+* * *
+
+1. Practice goodness of fit problem
+
+The expected proportions for each category can be defined in any manner, depending on the null hypothesis.  
+
+Test the following null and alternative hypotheses:  
+
+**H~0~**: The probability of an NHL player being born in any given month is equal to the proportion of births in the general population that occurr in each month.   
+
+**H~A~**: The probability of an NHL player being born in any given month is not equal to the proportion of births in the general population that occurr in each month. 
+
+Use the frequency data within the `canada_births_2000_2005` variable in the `nhlbirths` data frame to calculate the expected proportions. 
+
+* * *
+
+## List of functions
+
+__Getting started__:
+
+* `library` 
+
+__Data frame structure__: 
+
+* `str`
+* `inspect`
+
+__Create tables__:
+
+* `kable`
+
+__Math__:
+
+* `sum`
+* `curve` (base package) 
+
+__Graphs__:
+
+* `barplot`
+* `segments`
+
+__Goodness of fit__:
+
+* `dchisq` (base package)
+* `qchisq` (base package)
+* `chisqtestGC` (from the `tigerstats` package)
+
+

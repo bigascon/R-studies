@@ -1,0 +1,408 @@
+---
+title: "Visualizing associations between two variables"
+output:
+  html_document:
+    css: tutorial.css
+    fig_caption: yes
+    highlight: pygments
+    theme: simplex
+    toc: yes
+    toc_float: yes
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(eval = T)
+library(tigerstats)
+lattice.options(default.theme = standard.theme(color = FALSE))
+```
+This page was last updated on `r format(Sys.time(), '%B %d, %Y')`.
+ 
+* * *
+
+## Background
+
+The type of graph that is most suitable for visualizing an association between two variables depends upon the type of data being visualized:  
+
+* If both variables are categorical, we can visualize the association in a table called a **contingency table**, or we can visualize the association graphically using a **grouped bar chart** or a **mosaic plot**
+* If both variables are numeric, we visualize the association graphically using a **scatterplot**
+* If one variable is categorical and the other numeric, we visualize the association graphically using a **strip chart** or a **boxplot**  
+
+In this tutorial you'll learn to construct and interpret each of these types of visualization.  In later tutorials you'll learn how to conduct statistical analyses of these associations.  
+
+* * *
+
+## Getting started
+
+### Import the data
+
+Import the `students.csv` data set and also a data set concerning locusts:
+```{r read_data}
+students <- read.csv(url("https://people.ok.ubc.ca/jpither/datasets/students.csv"), header = TRUE)
+locust <- read.csv(url("http://whitlockschluter.zoology.ubc.ca/wp-content/data/chapter02/chap02f1_2locustSerotonin.csv"))
+```
+
+* * *
+
+### Load the required packages
+
+Load the required `tigerstats` package:
+```{r attach_libraries}
+library(tigerstats)
+```
+
+* * *
+
+### Get an overview of the data
+
+The `students` object that we created in your workspace is a *data frame*, with each row representing a *case* and each column representing a *variable*.  Data frames can store a mixture of data types: numeric variables, categorical variables, logical variables etc... all in the same data frame (as separate columns). This isn't the case with other object types (e.g. matrices).
+
+Use the `str` command to get an overview of the dataset:
+
+```{r show_structure}
+str(students)
+```
+
+Even better, the `mosaic` package, which is loaded along with the `tigerstats` package, includes a function `inspect` that really provides a nice overview of a data frame, along with some descriptive statistics (we'll come back to these later):
+```{r inspection}
+inspect(students)
+```
+
+You see that there are:
+
+* both categorical and quantitative (numerical) variables  
+* no missing values for any of the variables
+* the `class` of each variable is listed (e.g. `factor` or `numeric` or `integer`)
+* each of the 4 categorical variables happens to have 2 `levels` (categories)
+* 2 numeric variables (height and head circumference)  
+* 1 integer variable (number of siblings)  
+* a variety of descriptive statistics accompanying both the variable types (categorical and numerical)
+
+Now that we have explored the basic structure of our dataset, we're ready to start visualizing the data graphically!
+
+* * *
+
+## Visualizing association between two categorical variables
+
+If two categorical variables are associated, the relative frequencies for one variable will differ among categories of the other variable.  To visualize such an association, we can construct:
+
+* a __contingency table__ 
+* a __grouped bar graph__
+* a __mosaic plot__
+
+* * *
+
+### Constructing a contingency table
+
+We learned earlier that we can use the `xtabs` command (from the `tigerstats` package) to produce a *frequency table* for a __single categorical variable__:
+```{r xtab_frequency}
+xtabs(~ sex, data = students)
+```
+This shows the frequency of observations (cases) in each category ('f' and 'm') of the single categorical variable (`sex`). There are 90 females and 64 males.
+
+Let's check whether there is an association between handedness (using the variable `dominant_hand`) and gender (using the `sex` variable).
+
+To construct a contingency table involving 2 variables, we include both variable names after the `~`, separated by a `+` sign:
+```{r xtab_contingency1}
+xtabs(~ sex + dominant_hand, data = students)
+```
+
+We can see that 4 out of 90 female students are left-handed, while 11 out of 64 male students are left-handed. At first glance, it appears that the frequency (count) of left-handed males is high, but it's easier to interpret __relative frequencies__ or __percentages__. We'll do this below.  But first:
+
+__TIP__: Contingency tables should always show the row and column totals, as well as the grand total (= total count of observations).
+
+This can be achieved with the `addmargins` function, wrapped around the `xtabs` function:
+```{r rowsums_colsums}
+addmargins(xtabs(~ sex + dominant_hand, data = students))
+```
+Voila - you now have a __contingency table__ showing an association between two categorical variables.  
+
+This particular table has dimensions 2 x 2, because each of our 2 categorical variables happens to have 2 categories. If one of our variables instead had, say, 3 categories, we would have a 2 x 3 dimension table. 
+
+Displaying the row and column totals, and the grand total, allows the reader to easily see how many observations (here, students) were in each category of each variable. For example, we see from the table above that there were 90 female and 64 male students in the dataset. We also see that there were 15 left-handed students and 139 right-handed students in the dataset.  
+
+### Relative frequencies  
+
+Often it is easier to interpret categorical data if they are presented as relative frequencies, or **proportions**.  
+
+To do this, we need to decide which of the "margins", i.e. rows or columns, we're going to use as the denominator when calculating the relative frequencies.  
+
+For instance, if we wanted to answer the question "What proportion of males in the class is right handed?", then we'd need to divide the frequencies in the table by the **row totals**. We can use the `prop.table` command to do this, making sure to include the argument `margin = 1` so that it expresses the proportions based on the __row totals__:
+```{r prop_table}
+prop.table(xtabs(~ sex + dominant_hand, data = students), margin = 1)
+```
+
+You'll see that if you sum the values in the same row, the add up to 1. 
+
+And if you'd rather use percentages, simply multiply by 100:
+```{r xtab_contingency3}
+100 * prop.table(xtabs(~ sex + dominant_hand, data = students), margin = 1)
+```
+
+Now you see that 17.2 percent of males were left-handed, while only 4.4 percent of females were left handed.  
+
+If instead we wanted to answer the question "What proportion of right-handed students in the dataset is male?", then we'd need to divide the frequencies in the table by the **column totals**.  
+
+Thus, change the `margin` argument value to 2:
+```{r prop_table2}
+prop.table(xtabs(~ sex + dominant_hand, data = students), margin = 2)
+```
+
+We see that of the right-handed students in the dataset, 38% (corresponding to a proportion of 0.38) are male.    
+
+Other functions that are handy when evaluating contingency tables are `rowPerc` and `colPerc`:
+```{r row_percents}
+rowPerc(xtabs(~ sex + dominant_hand, data = students))
+colPerc(xtabs(~ sex + dominant_hand, data = students))
+```
+
+* * *
+
+### Constructing a grouped bar chart
+
+Although the continency tables were informative, graphs can be much more effective at showing associations.
+
+We can use the `barchartGC` function to visualize associations between two categorical variables, creating a __grouped bar chart__:
+```{r grouped.bar1, fig.cap = "Figure X. Grouped bar graph of the association between handedness ('l' denotes left-handed, 'r' denotes right-handed) and gender in a class of 90 female ('f') and 64 male ('m') students.", fig.width = 3.5, fig.height = 5}
+barchartGC(~ sex + dominant_hand, data = students, type = "freq")
+```
+
+Note the additional argument `type`, which specifies whether we want to show the raw __counts__ ("freq") or __percentages__, as in the following:
+```{r grouped.bar2, fig.cap = "Figure X. Grouped bar graph of the association between handedness ('l' denotes left-handed, 'r' denotes right-handed) and gender in a class of 90 female ('f') and 64 male ('m') students.", fig.width = 3.5, fig.height = 5}
+barchartGC(~ sex + dominant_hand, data = students, type = "perc")
+```
+
+Sometimes it's better to display the graph horizontally. We can do this thanks to the `horizonal` argument in the `barchartGC` function:
+```{r grouped.bar.hor2, fig.cap = "Figure X. Grouped bar graph of the association between handedness ('l' denotes left-handed, 'r' denotes right-handed) and gender in a class of 90 female ('f') and 64 male ('m') students.", fig.width = 5, fig.height = 3.5}
+barchartGC(~ sex + dominant_hand, data = students, type = "perc", horizontal = T)
+```
+
+In the figures above, we used `sex` (gender) as the variable shown on the graph axis, and `dominant_hand` differentiated using colours and a legend.  
+
+We can switch this around by changing which variable appears immediately after the `~` in the `barchartGC` command:
+```{r grouped.bar.hor3, fig.cap = "Figure X. Grouped bar graph of the association between gender and handedness ('l'  denotes left-handed, 'r' denotes right-handed) in a class of 90 female ('f') and 64 male ('m') students.", fig.width = 5, fig.height = 3.5}
+barchartGC(~ dominant_hand + sex, data = students, type = "perc", horizontal = T)
+```
+
+Note the different figure caption in this figure compared to the preceding ones: here it says "association between gender and handedness"... we have "gender" appearing first, and the categories "m" and "f" are differentiated by colours, as indicated in the legend.  It is typical to use this convention, i.e. the second variable in the statement is the one put on the axis of a grouped bar chart.
+
+You should decide on which variable appears on the graph axis, and which in the legend, depending on what you wish to convey.  
+
+If you wish to describe the **association between handedness and gender** (more logical in this example), the original layout is best (sex on the axis). If you wished to describe the **association between gender and handedness** (less logical in this example), then the last graph is best.  
+
+* * *
+
+### Constructing a mosaic plot
+
+An alternative but less common way to visualize the association between two categorical variables is a __mosaic plot__.
+
+We can use the `mosaicplot` function, which expects a contingency table as its input, which itself is provided by the `xtabs` function:
+```{r fig.cap = "Figure X. Mosaic plot of the association between handedness ('l' denotes left-handed, 'r' denotes right-handed) and gender in a class of 90 female ('f') and 64 male ('m') students.", fig.width = 4, fig.height = 4}
+mosaicplot(xtabs(~ sex + dominant_hand, data = students), 
+           col = c("firebrick", "goldenrod1"),
+           xlab = "Gender",
+           ylab = "Dominant hand",
+           main = "") # don't show main title because we have a proper figure caption
+```
+
+* * *
+
+### Interpreting grouped bar charts and mosaic plots
+
+Let's re-plot the grouped bar chart and the mosaic plot first (we won't show the code, as it is identical to above):  
+
+```{r echo = F, fig.cap = "Figure X. Grouped bar graph of the association between handedness ('l'  denotes left-handed, 'r' denotes right-handed) and gender in a class of 90 female ('f') and 64 male ('m') students.", fig.width = 5, fig.height = 3.5}
+barchartGC(~ sex + dominant_hand, data = students, type = "perc", horizontal = T)
+```
+  
+  
+```{r echo = F, fig.cap = "Figure X. Mosaic plot of the association between handedness ('l' denotes left-handed, 'r' denotes right-handed) and gender in a class of 90 female ('f') and 64 male ('m') students.", fig.width = 4, fig.height = 4}
+mosaicplot(xtabs(~ sex + dominant_hand, data = students), 
+           col = c("firebrick", "goldenrod1"),
+           xlab = "Gender",
+           ylab = "Dominant hand",
+           main = "") # don't show main title because we have a proper figure caption
+```
+
+Both figures show that the percent of students of the same gender that are left-handed is greater among males than among females. However, this pattern is arguably easier to discern in the mosaic plot.  
+
+Note also that, by default, the mosaic plot provides an indication of sample sizes within the two categories (male versus female): the relative **width** of the bars indicates this.  Recall that there were 64 males and 90 females in the class, and accordingly, the bars on the right (males) are narrower than those on the left.  
+
+* * *
+
+## Visualizing association between two numeric variables
+
+### Creating a scatterplot
+
+We use a __scatterplot__ to show association between two numerical variables.
+
+The `xyplot` function does the trick.
+
+__TIP__: Notice the syntax: here we have our response (y) variable on the left of the `~` symbol, and the explanatory (x) variable on the right:
+
+```{r fig.cap = "Figure 1: Scatterplot of the association between head circumference and height among 154 students.", fig.width = 4, fig.height = 4}
+xyplot(head_circum_cm ~ height_cm, data = students, 
+       col = "black", # change symbol colour to black
+       xlab = "Height (cm)",
+       ylab = "Head circumference (cm)")
+```
+
+__TIP__: Note the added arguments to the `xyplot` function. We have changed the symbol colour, and added better x- and y-axis labels. 
+
+To see how to format and create a good figure caption for a scatterplot, consult the guidelines for data presentation  [here](https://people.ok.ubc.ca/jpither/more/UBCO_biology_guidelines_data_presentation_2016.pdf).
+
+* * *
+
+### Interpreting and describing a scatterplot
+
+Things to report when describing a scatterplot:
+
+* is there an association? A "shotgun blast" pattern indicates no. If there is an association, is it _positive_ or _negative_?
+* is the association weak? strong? moderately strong? (determined by how tightly distributed the points are around the relationship)
+* is the association _linear_ or not?
+* are there any _outlier_ observations that lie far from the general trend?  
+
+In the scatterplot above, head circumference is positively associated with height, and the association is moderately strong. There are no observations that are obviously incosistent with the general trend.  
+
+* * *
+
+## Visualizing association between a numeric and a categorical variable
+
+To visualize association between a numerical variable and a categorical variable, we can construct:
+
+* a __stripchart__ 
+* a __boxplot__
+
+Use a stripchart when there are relatively few observations (e.g. less than 20) within each category of the categorical variable. Use a boxplot otherwise.
+
+Let's have a look at the locust serotonin data set using the `str` function:
+
+```{r}
+str(locust)
+```
+
+These data describe serotonin levels in the central nervous system of desert locusts that were experimentally crowded for 0 (the control group), 1, and 2 hours.  The `treatmentTime` variable is an `integer` type variable, in that it describes the number of hours (0, 1, or 2) the locusts were experimentally crowded.  However, we could simply consider this variable as a categorical variable denoting which "treatment group" the locusts belonged to.  That's what we'll do here: pretend the `treatmentTime` variable is a categorical variable.  
+
+Let's see how many observations there are in each treatment group.  We can use the `xtabs` function we learned earlier for this:
+```{r}
+xtabs(~ treatmentTime, data = locust)
+```
+
+Given that there are only 10 observations per group, we should use a __stripchart__ to visualize how serotonin levels associate with treatment.
+
+* * *
+
+### Create a strip chart  
+
+We use the `stripchart` function for this, and we'll add some arguments to improve the quality of the graph:
+```{r fig.cap = "Figure 1: Stripchart of the association between serotonin levels and experimental treatment (N = 10 locusts per group).", fig.width = 3, fig.height = 4}
+stripchart(serotoninLevel ~ treatmentTime, data = locust, 
+           ylab = "Serotonin (pmoles)",
+           xlab = "Treatment group (number of hours)",
+           method = "jitter",  # jitters the symbols
+           pch = 1,  # pch changes the symbol type
+           col = "firebrick",
+           vertical = TRUE,
+           las = 1)  # orients y-axis tick labels properly
+```
+
+To see how to format and create a good figure caption for a stripchart, consult the guidelines for data presentation  [here](https://people.ok.ubc.ca/jpither/more/UBCO_biology_guidelines_data_presentation_2016.pdf)
+
+* * *
+
+### Create a boxplot  
+
+We'll go back to the `students` dataset for this, and evaluate how height is associated with gender.
+
+Let's see how many observations there are in each group.  We can use the `xtabs` function we learned earlier for this:
+```{r}
+xtabs(~ sex, data = students)
+```
+
+So clearly a boxplot is useful here, because the number of observations in each group is >> 20.
+
+We use the `boxplot` function to create a boxplot.
+
+Take note of the various arguments that we set:
+```{r fig.cap = "Figure X. Boxplot of the association between height and gender among 154 students.", fig.width = 3, fig.height = 4}
+boxplot(height_cm ~ sex, data = students, 
+           ylab = "Height (cm)",
+           xlab = "Gender",
+           las = 1)  # orients y-axis tick labels properly
+```
+
+__TIP__: Notice the consistent syntax again, with the response (y) variable on the left of the `~` symbol and the explanatory (x) variable to the right.
+
+To see how to format and create a good figure caption for a boxplot, consult the guidelines for data presentation  [here](https://people.ok.ubc.ca/jpither/more/UBCO_biology_guidelines_data_presentation_2016.pdf)
+
+* * *
+
+### Interpreting stripcharts and boxplots
+
+We will wait until the tutorial [Analysis of Variance](https://people.ok.ubc.ca/jpither/modules/Comparing_more_than_2_means.html) to learn about interpreting stripcharts, because there we learn how to add more information to the graphs, such as group means and measures of uncertainty. For now, let's look at the stripchart from above and see what we can glean:  
+
+```{r fig.cap = "Figure 1: Stripchart of the association between serotonin levels and experimental treatment (N = 10 locusts per group).", fig.width = 3, fig.height = 4}
+stripchart(serotoninLevel ~ treatmentTime, data = locust, 
+           ylab = "Serotonin (pmoles)",
+           xlab = "Treatment group (number of hours)",
+           method = "jitter",  # jitters the symbols
+           pch = 1,  # pch changes the symbol type
+           col = "firebrick",
+           vertical = TRUE,
+           las = 1)  # orients y-axis tick labels properly
+```
+
+We see that at the 0 and 1hr treatment times, most of the Serotonin levels appear to be clustered around 5pmoles, but a few observations are much higher. This pattern is less clear in the 2hr group. There does appear to be a slight increase, in general, in Serotonin levels in the 2hr group compared to the others, but we'll learn more about this later.  
+
+Now for the boxplot:  
+
+```{r fig.cap = "Figure 2. Boxplot of the association between height and gender among 154 students.", fig.width = 3, fig.height = 4}
+boxplot(height_cm ~ sex, data = students, 
+           ylab = "Height (cm)",
+           xlab = "Gender",
+           las = 1)  # orients y-axis tick labels properly
+```
+
+This boxplot clearly shows that male students are, on average, around 15cm taller than females in the class. Median height (denoted by the thick horizontal lines) among females is around 166cm, and is around 180cm among males. A few students are especially tall compared to their classmates: one female is around 186cm tall, and one male is over 210cm tall!  
+
+* * *
+
+## Extra help
+
+You can find extra tips and instructions about graphing in R at this [webpage](http://www.statmethods.net/advgraphs/index.html). Note that the graphing functions you'll learn about in this tutorial are from the `lattice` package, which is loaded as part of the `tigerstats` package.
+
+We will eventually learn how to make graphs using the `ggplot2` package.
+
+* * *
+
+## List of functions (and the source packages) used in tutorial
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+* `getwd`  
+
+__Data frame structure__: 
+
+* `names`
+* `head`
+* `str`
+* `inspect` (`tigerstats` / `mosaic` packages)
+
+__Contingency tables__:
+
+* `xtabs`
+* `addmargins`
+* `prop.table`
+* `rowPerc` (`tigerstats`)
+* `colPerc` (`tigerstats`)
+
+__Graphs__:
+
+* `barchartGC` (`tigerstats` / `lattice` packages)
+* `mosaicplot` 
+* `stripchart` (`lattice` package)
+* `xyplot` (`lattice` package)
+* `boxplot`
+

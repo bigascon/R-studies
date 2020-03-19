@@ -1,0 +1,475 @@
+---
+title: "Comparing two means"
+output:
+  html_document:
+    css: tutorial.css
+    fig_caption: yes
+    highlight: pygments
+    theme: simplex
+    toc: yes
+    toc_float: yes
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(eval = TRUE)
+library(tigerstats, warn.conflicts = FALSE, quietly = TRUE)
+lattice.options(default.theme = standard.theme(color = FALSE))
+```
+This page was last updated on `r format(Sys.time(), '%B %d, %Y')`.
+
+* * *
+
+## Getting started
+
+Imagine, for example, we randomly assigned 10 subjects to a _control_ study group and 10 to a _treatment_ study group.  On each subject, we measure a numeric response variable, say _body temperature_.  Thus, we have a single numeric variable (body temperature) that we wish to compare among the two categories (control and treatment) of the categorical variable "study group".  To do this, we compare **mean** body temperature among the two categories of study group. 
+
+When comparing the means of two groups, you must choose between two statistical tests, depending upon the study design.  
+
+In a **paired design**, both treatments are applied to every sampled unit. In the **two-sample design**, each treatment group is composed of an independent random sample of units.   
+
+For a paired design, such as "before and after" measurements on the same subjects, one simply calculates the **differences** between the paired measurements, then conducts a one-sample *t*-test on these resulting differences. We also calculate the 95% confidence interval for the difference, using methods we learned in the [Inference for a normal distribution](https://people.ok.ubc.ca/jpither/modules/Inference_normal_distribution.html#confidence_intervals_for_an_estimate_of_(mu)) tutorial.  
+
+For an independent-groups design, we use a two-sample *t*-test, and we calculate the 95% confidence interval for the difference using a new procedure that includes calculating the **pooled sample variance** (which R does for us).    
+
+In sum, in this tutorial you will learn about the following:  
+* the **paired** *t*-test  
+* the **2-sample** *t*-test 
+* calculating the 95% confidence interval for the difference between the means of two paired groups, and two independent groups
+
+You must consult the **Checking assumptions and data transformations** [tutorial](https://people.ok.ubc.ca/jpither/modules/assumptions_transformations.html), as we will use some of the methods described therein. 
+
+* * *
+
+### Required packages
+
+* `tigerstats`
+* `tidyr`
+* `car` 
+
+The `tidyr` and `car` packages are likely new for your, so type the following into your **command console**:  
+
+```
+install.packages("tidyr")
+install.packages("car")
+```
+
+Load the packages:  
+
+```{r}
+library(tigerstats, warn.conflicts = FALSE, quietly = TRUE)
+library(tidyr, warn.conflicts = FALSE, quietly = TRUE)
+library(car, warn.conflicts = FALSE, quietly = TRUE)
+```
+
+* * *
+
+### Required data
+
+* the "blackbird" dataset.  These are the data associated with Example 12.2 in the text (page 330)
+* the "students" dataset. 
+
+```{r}
+blackbird <- read.csv(url("https://people.ok.ubc.ca/jpither/datasets/blackbird.csv"), header = TRUE)
+students <- read.csv(url("https://people.ok.ubc.ca/jpither/datasets/students.csv"), header = TRUE)
+```
+
+* * *
+
+## Paired *t*-test
+
+We'll use the `blackbird` dataset for this example.  
+
+For 13 red-winged blackbirds, measurements of antibodies were taken before and after implantation with testosterone.  Thus, the same bird was measured twice. Clearly, these measurements are not independent, hence the need for a "paired" _t_-test.  
+
+* * *
+
+### Data structure: Long versus Wide format  
+
+Let's look at how the data are stored, as this key to deciding how to proceed:  
+
+```{r}
+blackbird
+```
+
+The data frame has 26 rows, and includes 3 variables, the first of which "blackbird" simply keeps track of the individual ID of blackbirds.  
+
+The response variable of interest, "Antibody" represents antibody production rate measured in units of natural logarithm (ln) 10^{-3} optical density per minute (ln[mOD/min]).  
+
+The factor variable `time` that has two levels: "After" and "Before".  
+
+These data are stored in **long format**, which is the ideal format for storing data. I encourage you to read this [webpage](https://cran.r-project.org/web/packages/tidyr/vignettes/tidy-data.html) regarding "tidy data".  
+
+Sometimes you may get data in **wide format**, in which case, for instance, we would have a column for the "Before" antibody measurements and another column for the "After" measurements.  
+
+**It is always preferable** to work with long-format data.  
+
+Consult the following [webpage](http://www.cookbook-r.com/Manipulating_data/Converting_data_between_wide_and_long_format/) for instructions on using the `tidyr` package for converting between wide and long data formats.  
+
+With our data in the preferred long format, we can proceed with our hypothesis test.  
+
+* * *
+
+### Hypothesis statements
+
+The hypotheses for this paired _t_-test focus on the mean of the *differences* between the paired measurements, denoted by $\mu$~d~:  
+
+H~0~: The mean change in antibody production after testosterone implants was zero ($\mu$~d~ = 0).  
+H~A~: The mean change in antibody production after testosterone implants was not zero ($\mu$~d~ $\neq$ 0).  
+
+Steps to a hypothesis test:  
+
+* We'll use an $\alpha$ level of 0.05.  
+* It is a two-tailed alternative hypothesis  
+* We'll visualize the data, and interpret the output
+* We'll use a paired *t*-test test to test the null hypothesis, because we're dealing with "before and after" measurements taken on the same individuals, and drawing inferences about a population mean $\mu$~d~ using sample data  
+* We'll check the assumptions of the test (see below)
+* We'll calculate our test statistic
+* We'll calculate the *P*-value associated with our test statistic
+* We'll calculate a 95% confidence interval for the mean difference
+* We'll provide a good concluding statement that includes a 95% confidence interval for the mean difference
+
+* * *
+
+### Assumptions of the paired *t*-test  
+
+The assumptions of the paired *t*-test are the same as the assumptions for the one-sample *t*-test:  
+
+* the sampling units are randomly sampled from the population
+* the differences have a normal distribution in the population (each group of measurements need not be normally distributed) 
+ 
+* * *
+
+### Visualize the data      
+
+The best way to visualize the data for a paired *t*-test is to create a **histogram** of the calculated *differences* between the paired observations.  
+
+We can calculate the differences between the "After" and "Before" measurements in a couple different ways.  
+
+First, we can use the `filter` command from the `tidyr` package (you previously used the same `filter` command from the `dplyr` package, which is part of the `tidyr` package), and use the `$` symbol to extract only the variable of interest:  
+
+```{r}
+antibody.diffs <- filter(blackbird, time == "After")$Antibody - filter(blackbird, time == "Before")$Antibody
+```
+
+Or we can use simple subsetting:
+```{r}
+antibody.diffs <- blackbird[blackbird$time == "After", "Antibody"] - blackbird[blackbird$time == "Before", "Antibody"]
+```
+
+Either way, our result is a vector of 13 differences, which we can now visualize with a histogram.  
+
+**NOTE**: Although previously we've used the `histogram` function to generate histograms, it is often easier to get easily-interpreted histograms using the base package `hist` function. We'll use this function now.
+
+We can also use the `segments` command to add a vertical dashed line that corresponds with the hypothesized mean difference of zero:    
+
+```{r histogram_example, fig.cap = "Figure 1: Histogram of the difference in antibody production rate before and after treatment (n = 13).", fig.height = 4.5, fig.width = 4}
+hist(antibody.diffs, nclass = 8, ## asks for 8 bars
+     xlab = "Antibody production rate (ln[mOD/min])",
+     las = 1, main = "",
+     col = "lightgrey")
+segments(x0 = 0, y0 = 0, x1 = 0, y1 = 5, lty = 2, lwd = 2, col = "red") # add vertical dashed line at hypothesized mu
+```
+
+With such a small sample size (13), the histogram is not particularly informative. But we do see most observations are just above zero.  
+
+**NOTE**: If you're curious about how to reproduce Figure 12.2-1 in the text, see this [webpage](http://whitlockschluter.zoology.ubc.ca/r-code/rcode12), about a third of the way down.
+
+* * *
+
+### Check assumptions
+
+The paired *t*-test assumes:  
+
+* the sampling units are randomly sampled from the population
+* the paired differences have a normal distribution in the population  
+
+We assume the first assumption is met.  
+
+The second assumption we test using graphical methods and a type of goodness-of-fit (GOF) test, as described in the [Checking assumptions and data transformations](https://people.ok.ubc.ca/jpither/modules/assumptions_transformations.html) tutorial.  
+
+Let's first check the normality assumption visually using a **Normal Quantile Plot**, and note that we're assessing the single response variable representing the **difference** in before and after measurements:  
+
+```{r norm.quant, fig.cap = "Figure 2: Normal quantile plot of the difference in antibody production rate (ln[mOD/min]) before and after testosterone implants within 13 red-winged black birds.", fig.width = 4, fig.height = 4.5}
+qqnorm(antibody.diffs, las = 1, main = ""); 
+qqline(antibody.diffs)
+```
+
+If the observations come from a normal distribution, they will generally fall close to the straight line.  
+
+Here, we would conclude:  
+
+> "The normal quantile plot shows that the data generally fall close to the line (except perhaps the highest value), suggesting that the data are drawn from a normal distribution."    
+
+And now a formal goodness of fit test, called the **Shapiro-Wilk Normality Test**, which tests the null hypothesis that the data are sampled from a normal distribution:    
+
+```{r}
+shapiro.result <- shapiro.test(antibody.diffs)
+shapiro.result
+```
+
+Given that the *P*-value is large (and much greater than 0.05), there is no reason to reject the null hypothesis. Thus, our normality assumption is met.  
+
+When testing the normality assumption using the Shapiro-Wilk test, there is no need to conduct all the steps associated with a hypothesis test. Simply report the results of the test (the test statistic `W` value and the associated *P*-value).  
+
+For instance: "A Shapiro-Wilk test revealed no evidence against the assumption that the data are drawn from a normal distribution (*W* = `r round(shapiro.result$statistic,2)`, *P*-value = `r round(shapiro.result$p.value,3)`)."  
+
+**NOTE**: A tutorial covering "non-parametric" tests, which are used when assumptions of parametric tests (like the *t*-test), is in preparation, but will not be complete until early 2019. In the meantime, you can explore some non-parametric tests [here](https://www.statmethods.net/stats/nonparametric.html).
+
+* * *
+
+### Conduct the test
+
+We can conduct a **paired t-test** in two different ways:  
+
+* conduct a one-sample *t*-test on the _differences_ using the `t.test` function and methods you learned in the [Comparing one mean to a hypothesized value](https://people.ok.ubc.ca/jpither/modules/Inference_normal_distribution.html) tutorial.
+
+* conduct a paired *t*-test using the `t.test` function and the argument `paired = TRUE`.
+
+
+* * *
+
+1. Paired *t*-test with `t.test`  
+
+* using the `antibody.diffs` vector you created above (representing the differences in antibody production rates), conduct all the steps of a hypothesis test, with the null hypothesis being that $\mu$~d~ = 0.  Use the methods you learned in the [Comparing one mean to a hypothesized value](https://people.ok.ubc.ca/jpither/modules/Inference_normal_distribution.html) tutorial.  
+
+* * *
+
+Let's proceed with the test, remembering to include the `mosaic` package name prior to the function name, to ensure we use the correct function:
+
+```{r}
+blackbird.ttest <- mosaic::t.test(Antibody ~ time, data = blackbird, paired = TRUE, conf.level = 0.95)
+blackbird.ttest
+```
+
+**NOTE**: When you specify `paired = TRUE`, the `t.test` function assumes that the observations are ordered identically in each group (the "Before" and "After" groups).  
+
+The output from the `t.test` function includes the calculated value of the test statistic *t*, the degrees of freedom (df), the *P*-value associated with the calculated test statistic, the 95% confidence interval for the difference, and the sample-based estimate of the difference (mean of the difference).  
+
+We see that the *P*-value of `r round(blackbird.ttest$p.value, 3)` is larger than our stated $\alpha$ (0.05), hence we do not reject the null hypothesis.  
+
+For a refresher from a previous [tutorial](https://people.ok.ubc.ca/jpither/modules/Inference_normal_distribution.html#finding_critical_values_of_t), let's use R to figure out what the *critical value* of *t* is for *df* = `r blackbird.ttest$parameter`:  
+
+```{r}
+alpha <- 0.05 # define alpha
+n <- 13 
+upper.crit <- qt(alpha/2, df = n - 1, lower.tail = FALSE) # if 2-tailed, divide alpha by 2
+lower.crit <- qt(alpha/2, df = n - 1, lower.tail = TRUE) # if 2-tailed, divide alpha by 2
+c(lower.crit, upper.crit)
+```
+
+This shows the lower and upper critical values of *t* associated with *df* = `r blackbird.ttest$parameter` and $\alpha$ = 0.05.  
+
+* * *
+
+### Concluding statement
+
+Given that the `t.test` function calculated the 95% confidence interval for the difference for us, we need not do any additional steps.  
+
+We fail to reject the null hypothesis, and conclude that there was no change in antibody production after testosterone implants (paired *t*-test; *t* = `r round(blackbird.ttest$statistic,2)`; *P*-value = `r round(blackbird.ttest$p.value,3)`; 95% confidence limits: `r round(blackbird.ttest$conf.int[1],3)`, `r round(blackbird.ttest$conf.int[2],3)`).  
+
+* * *
+
+## Two sample *t*-test
+
+Have a look at the `students` dataset:  
+
+```{r}
+inspect(students)
+```
+
+These data include measurements taken on 154 students in BIOL202 a few years ago.  
+
+Note that the categories in the `sex` variable are "f" and "m":
+
+```{r}
+levels(students$sex)
+```
+
+Let's change these to be more informative, "Female" and "Male". We do this using the function `levels` (see above) which tells us what the categories are in a categorical (factor) variable. Then we simply rename those values:
+
+```{r}
+levels(students$sex) <- c("Female", "Male")
+```
+
+### Hypothesis statement
+
+H~0~: The mean height of male and female students is the same ($\mu$~M~ = $\mu$~F~).  
+H~A~: The mean height of male and female students is not the same ($\mu$~M~ $\neq$ $\mu$~F~).  
+
+Steps to a hypothesis test:  
+
+* We'll use an $\alpha$ level of 0.05.  
+* It is a two-tailed alternative hypothesis  
+* We'll visualize the data, and interpret the output
+* We'll use a 2-sample *t*-test test to test the null hypothesis, because we're dealing with numerical measurements taken on independent within two independent groups, and drawing inferences about population means $\mu$ using sample data  
+* We'll check the assumptions of the test (see below)
+* We'll calculate our test statistic
+* We'll calculate the *P*-value associated with our test statistic
+* We'll calculate a 95% confidence interval for the difference ($\mu$~M~ - $\mu$~F~)
+* We'll provide a good concluding statement that includes a 95% confidence interval for the mean difference ($\mu$~M~ - $\mu$~F~)  
+
+* * *
+
+### Assumptions of the 2-sample *t*-test  
+
+The assumptions of the 2-sample *t*-test are the same as the assumptions for the one-sample *t*-test:  
+
+* each of the two samples is a random sample from its population
+* the numerical variable is normally distributed in each population
+* the variance (and thus standard deviation) of the numerical variable is the same in both populations  
+
+**NOTE**: Read bottom of page 340 in the text, which describes how *robust* this test is to violations of the assumptions.  
+ 
+* * *
+
+### Visualize the data      
+
+We learned in an earlier [tutorial](https://people.ok.ubc.ca/jpither/modules/Associations_variables.html#visualizing_association_between_a_numerical_and_a_categorical_variable) that we can use a stripchart or boxplot to visualize a numerical response variable in relation to a categorical variable.  
+
+Here we want to visualize height in relation to sex (or gender).  
+
+We use a stripchart for relatively small sample sizes in each group (e.g. < 20), and a boxplot otherwise.  
+
+Let's calculate sample sizes by tabulating the frequency of each sex:  
+
+```{r}
+samp.sizes <- xtabs(~ sex, data = students) 
+samp.sizes
+```
+
+So, large samples sizes in each group, therefore a boxplot is warranted.  
+
+```{r fig.cap = "Figure 3: Boxplot of height in relation to gender among 154 students. Boxes delimit the first to third quartiles, bold lines represent the group medians, bold circles the group means, and whiskers extend to 1.5 times the IQR. Points beyond whiskers are extreme observations.", fig.width = 3, fig.height = 4}
+boxplot(height_cm ~ sex, data = students,
+        ylab = "Height (cm)",
+        xlab = "Gender",
+        las = 1)  # orients y-axis tick labels properly
+```
+
+We see that males are, on average, quite a bit taller than females.  
+
+**NOTE**: In the [Biology guidelines to data presentation](https://people.ok.ubc.ca/jpither/more/UBCO_biology_guidelines_data_presentation_2016.pdf), it is recommended that the first boxplot you present should include, in the figure caption, a description of all the features of the boxplot (as shown above).  
+
+Be sure to follow those instructions in any assignment.  
+
+**TIP**: You can create even better boxplots using the `ggplot2` package, as described [here](http://ggplot2.tidyverse.org/reference/geom_boxplot.html).  
+
+* * *
+
+### Check assumptions
+
+The assumptions of the 2-sample *t*-test are the same as the assumptions for the one-sample *t*-test:  
+
+* each of the two samples is a random sample from its population
+* the numerical variable is normally distributed in each population
+* the variance (and thus standard deviation) of the numerical variable is the same in both populations  
+
+* * *
+
+**Test for normality**  
+
+Now let's check the normality assumption by plotting a normal quantile plot for each group. We use the `par` function to enable 2 graphs positioned side by side:  
+
+```{r fig.cap = "Figure 4: Normal quantile plots of the heights (cm) of 90 female and 64 male students.", fig.width=6, fig.height=3}
+par(mfrow = c(1,2)) # create one row of 2 columns for graphs
+qqnorm(students$height_cm[students$sex == "Female"], las = 1, main = "Female");
+qqline(students$height_cm[students$sex == "Female"]) # add the line
+qqnorm(students$height_cm[students$sex == "Male"], las = 1, main = "Male");
+qqline(students$height_cm[students$sex == "Male"]) # add the line
+```
+
+We see that the male data are a little bit off the line, but we know that, thanks to the **central limit theorem**, the 2-sample *t*-test is robust to violations of non-normality when one has large sample sizes. Thus, we'll proceed with testing the next assumption (there's no need to conduct a Shapiro-Wilk's test).  
+
+* * *
+
+**Test for equal variances**  
+
+Now we need to test the assumption of equal variance among the groups, as described in the [Checking assumptions and data transformations](https://people.ok.ubc.ca/jpither/modules/assumptions_transformations.html) tutorial.  
+
+We'll use the Levene's test to test the null hypothesis that the variances are equal among the groups.  
+
+```{r}
+height.vartest <- leveneTest(height_cm ~ sex, data = students)
+height.vartest
+```
+
+It uses a test statistic "F", and we see here that the *P*-value associated with the test statistic is almost 1, so clearly not significant.  
+
+We state "A Levene's test showed no evidence against the assumption of equal variance (*F* = `r round(unlist(height.vartest)[3], 2)`; *P*-value = `r round(unlist(height.vartest)[5], 3)`)."
+
+Thus, we'll proceed with conducting the test.  
+
+* * *
+
+### Conduct the test
+
+We use the `t.test` function again, but this time we make sure to set the `paired` argument to `FALSE`.  
+
+**NOTE**: The argument "var.equal" allows us to specify whether the assumption of equal variance is met or not. Below we specify `var.equal = TRUE`, and thus we implement the regular 2-sample *t*-test. If instead we were to specify `var.equal = FALSE`, the function would implement the **Welch's _t_-test**, which is appropriate when variances are unequal (see the help file for the function).
+
+```{r}
+height.ttest <- t.test(height_cm ~ sex, data = students, paired = FALSE, var.equal = TRUE, conf.level = 0.95)
+height.ttest
+```
+
+We see that the test produced an extremely small *P*-value, much smaller than our $\alpha$, so we reject the null hypothesis.  
+
+**NOTE**: Given the negative *t* value shown in the output, it's clear that the function calculated the difference in means as (Female minus Male).  This is fine, but we need to make sure our concluding statement recognizes this, and reports the *t* value either as positive or negative, depending on the wording.  
+
+Note also that the output includes a **confidence interval** for the _difference_ in group means. We need to include this in our concluding statement.  
+
+* * *
+
+### Concluding statement
+
+On average, male students are significantly taller than female students (2-sample *t*-test; *t* = `r abs(round(height.ttest$statistic,2))`; *P*-value < 0.001; 95% confidence limits for the true difference in mean height: `r min(abs(round(height.ttest$conf.int[1], 3)),abs(round(height.ttest$conf.int[2], 3)))`, `r max(abs(round(height.ttest$conf.int[1], 3)),abs(round(height.ttest$conf.int[2], 3)))`).
+
+* * *
+
+## When assumptions aren't met
+
+When one or more assumptions of the test of choice are not met, you have other options, such as transforming the variables.  
+
+These options are covered in the [Checking assumptions and data transformations](https://people.ok.ubc.ca/jpither/modules/assumptions_transformations.html) tutorial.   
+
+* * *
+
+## List of functions
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+
+__Data management / manipulation__: 
+
+* `inspect` (`tigerstats` / `mosaic` packages)
+* `levels`
+* `filter` (`tidyr` package)
+* `xtabs` (`tigerstats` / `mosaic` packages)
+
+__The "t" distribution__:
+
+* `qt`
+* `t.test` (`mosaic` package loaded as part of the `tigerstats` package)
+
+__Graphs__:
+
+* `hist`
+* `boxplot`
+* `qqnorm`
+* `qqline`
+* `segments`
+* `par`  
+
+__Assumptions__:  
+
+* `leveneTest` (`car` package)
+* `qqnorm`
+* `qqline`
+* `shapiro.test`
+
+
+
+

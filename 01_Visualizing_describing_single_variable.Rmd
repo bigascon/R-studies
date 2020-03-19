@@ -1,0 +1,399 @@
+---
+title: "Visualizing and describing a single variable"
+output:
+  html_document:
+    css: tutorial.css
+    fig_caption: yes
+    highlight: pygments
+    theme: simplex
+    toc: yes
+    toc_float: yes
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(eval = TRUE)
+library(tigerstats)
+lattice.options(default.theme = standard.theme(color = FALSE))
+```
+This page was last updated on `r format(Sys.time(), '%B %d, %Y')`.
+
+* * *
+
+## Background
+
+When visualizing a describing a single variable, we typically wish to describe a **frequency distribution**. We visualize a frequency distribution in different ways depending on the type of data we're dealing with: **categorical** or **numeric**.  
+
+* If the variable is categorical, we can visualize the frequency distribution using a **bar chart**
+* If the variable is numeric, we visualize the frequency distribution using a **histogram**
+
+In this tutorial you'll learn to construct and interpret each of these types of visualization.  You'll also learn to calculate some descriptive statistics.  
+
+* * *  
+
+## Getting started
+
+### Import the data 
+
+We will use the following datasets in this tutorial:
+
+* the `students.csv` file contains anonymous physical data about BIOL202 students from a few years ago
+* the `birds.csv` file contains counts of different categories of bird from a marsh habitat
+
+Read in the data:
+```{r read_data}
+students <- read.csv(url("https://people.ok.ubc.ca/jpither/datasets/students.csv"), header = TRUE)  
+birds <- read.csv(url("https://people.ok.ubc.ca/jpither/datasets/birds.csv"), header = TRUE)
+```
+ 
+__TIP__: Notice the two sets of parentheses in each line of code above. The RStudio text editor will highlight errors such as unmatched parentheses for you.
+
+* * *
+
+### Load the required packages
+
+In this tutorial we will make use of the following R package:  
+
+* `tigerstats`
+
+If you haven't already installed the `tigerstats` package (info [here](https://homerhanumat.github.io/tigerstats/index.html)), click your pointer within the command console, then issue the following command:
+```{r install_packages, eval = FALSE}
+install.packages("tigerstats")
+```
+
+Alternatively, you can click the "packages" tab in the bottom-right panel in RStudio, then the "Install" tab, then follow the instructions.  
+
+Once installed, load the package as follows:
+```{r attach_libraries}
+library(tigerstats)
+```
+
+The `tigerstats` package automatically loads other packages such as `mosaic` (info [here](http://mosaic-web.org/)), which include very handy functions for descriptive and elementary statistics.
+
+* * *
+
+### Get an overview of the data
+
+The `students` object that we created in your workspace is a *data frame*, with each row representing a *case* and each column representing a *variable*.  Data frames can store a mixture of data types: numeric variables, categorical variables, logical variables etc... all in the same data frame (as separate columns). This isn't the case with other object types (e.g. matrices).
+
+To view the names of the variables in the data frame, use the `names` command as follows:
+
+```{r show_names}
+names(students)
+```
+
+This returns the names `height_cm`, `head_circum_cm`, `sex`, `number_siblings`, `dominant_hand`, `dominant_foot`, and `dominant_eye`. 
+
+We can get a glimpse of the first handful of cases (rows) of our data with the `head` command
+
+```{r show_head}
+head(students)
+```
+
+You could also look at *all* of the data frame at once by typing its name into the console and pressing return, but that is not advisable, as you could get reams of output thrown at you if you're dealing with a large dataset! It's better to take a small peek at the data with `head`.
+
+We should now get an idea of how many cases are there in this data set, how many variables it contains, and what type of data comprise each variable (e.g. numeric, integer, character, factor, logical, etc...).
+
+Use the `str` command to do this:
+
+```{r show_structure}
+str(students)
+```
+
+Even better, the `mosaic` package, which is loaded along with the `tigerstats` package, includes a function `inspect` that really provides a nice overview of a data frame, along with some descriptive statistics (we'll come back to these later):
+```{r inspection}
+inspect(students)
+```
+
+You see that there are:
+
+* both categorical and quantitative (numerical) variables  
+* no missing values for any of the variables
+* the `class` of each variable is listed (e.g. `factor` or `numeric` or `integer`)
+* each of the 4 categorical variables happens to have 2 `levels` (categories)
+* 2 numeric variables (height and head circumference)  
+* 1 integer variable (number of siblings)  
+* a variety of descriptive statistics accompanying both the variable types (categorical and numerical)
+
+1. You should now repeat the preceding steps on the `birds` data frame, so you know what it looks like.
+
+Now that we have explored the basic structure of our dataset, we're ready to start visualizing the data graphically!
+
+* * *
+
+## Frequency distributions
+
+Once you have a dataframe to work with, and have explored its structure and contents (above), the next order of business is always to _visualize_ and summarize your data using graphs and tables. 
+
+We start by examining the *frequency distribution* of the variable(s) of interest.  A *frequency distribution* displays the number of occurrences (cases) of all values in the data.  How we display this information depends on the type of data at hand: **are they numerical or categorical**?  
+
+We also typically report the *relative frequency distribution* for the variable(s), which describes the fraction of occurrences of each value of a variable.
+
+Frequency distributions can be displayed in a table and graphically.
+
+* * *
+
+## Visualizing and describing categorical data
+
+### Creating a frequency table for one categorical variable
+
+Use the `xtabs` command (from the `tigerstats` package) to produce a *frequency table*, which shows the frequency distribution for a __categorical variable__ in tabular format.  
+
+Here we show the frequency of observations in each of the two categories contained in the `sex` variable within the `students` dataframe:
+```{r xtab_frequency}
+xtabs(~ sex, data = students)
+```
+
+__TIP__: Take note of the syntax in the arguments provided to the `xtabs` function. We'll return to this later. 
+
+We see that there are 2 categories (or "levels") "f" and "m" representing female and male; this was also shown by the `str` function earlier. There are 90 and 64 observations (students) in those respective categories.
+
+To show the *relative frequency distribution* for the `sex` variable, use the `prop.table` function and wrap it around the "xtabs" function using a second set of parentheses:
+```{r relative_frequency}
+prop.table(xtabs(~ sex, data = students))
+```
+
+You can convert these relative frequencies to percentages by multiplying them by 100:
+```{r rel_percent}
+100 * prop.table(xtabs(~ sex, data = students))
+```
+
+Or you can use the handy `rowPerc` function to convert the raw frequencies to percentages:
+```{r rowperc}
+rowPerc(xtabs(~ sex, data = students))
+```
+
+* * *
+
+### Create a sorted frequency table
+
+When there are more than 2 categories in the variable of interest, you will need to __sort__ the frequencies in decreasing order.
+
+There are several steps to this, which we'll demonstrate using the `birds` dataset.
+
+* use the `xtabs` function to create a frequency table
+* use the `sort` function to sort the resulting frequencies across categories
+* use the `data.frame` function to create a data frame that stores the properly sorted frequencies
+* rename the variables in the data frame
+* show the resulting table
+
+```{r sorted_dataframe}
+bird.table <- xtabs(~ type, data = birds)  # create frequency table
+bird.table.sort <- sort(bird.table, decreasing = TRUE)  # sort the frequencies in decreasing order
+bird.df <- data.frame(bird.table.sort)  # create a data frame
+names(bird.df) <- c("Birdtype", "Frequency")  # rename variables
+bird.df  # show the final table
+```
+
+There we go! A frequency table that is appropriately sorted.  We'll use the `bird.table.sort` object later for graphing too.
+
+* * *
+
+### Creating a bar chart
+
+We use a *bar chart* to visualize the frequency distribution for a single categorical variable.
+
+The `tigerstats` package has a handy function called `barchartGC` that can do this:
+
+```{r barchart_frequency1, fig.height = 4.5, fig.width = 4}
+barchartGC(~ type, data = birds)
+```
+
+__TIP__: Note that the syntax of the arguments provided to the `barchartGC` function is identical to the syntax used for the `xtabs` function. 
+
+__Problem__: Note how the categories are not sorted in order of decreasing frequency, as they should be. Thus, we need to use our sorted data from above to create a proper bar chart.
+
+```{r barchart_frequency0, fig.height = 4.5, fig.width = 4}
+barchartGC(bird.table.sort)
+```
+
+Sometimes it's better to display the bar chart horizontally, especially if your category labels are long. 
+
+You should change the width and height settings accordingly:
+```{r barchart_frequency2, fig.height = 4, fig.width = 4.5}
+barchartGC(bird.table.sort, horizontal = TRUE)
+```
+
+__Problem__: Here the bars are sorted in the reverse order; the longest bar should be at the top of the graph.  To fix this, simply use the `sort` function again _within_ the `barchartGC` function, as follows:
+```{r barchart_frequency_hor, fig.height = 4, fig.width = 4.5}
+barchartGC(sort(bird.table.sort), horizontal = TRUE)
+```
+
+We can use the same command to visualize the relative frequency distribution. 
+
+First let's use the `prop.table` function to create an object that holds the relative frequencies, then we'll plot those with the `barchartGC` function, using the sorted frequency table again:
+```{r barchart_relative, fig.height = 4.5, fig.width = 4}
+bird.table.rel <- prop.table(bird.table.sort)  
+barchartGC(bird.table.rel, ylab = "Relative frequency")
+```
+
+Two things to note in the preceding code:  
+
+* we provided the `bird.table.rel` object as the main argument to the `barchartGC` function. This was necessary to display the relative frequencies, which were calculated and stored in the appropriate table format using the `xtabs` function
+* we provided an additional argument `ylab`, which specifies the text to use as the label for the y-axis. This was required because the default y-axis label is "frequency", and we are showing "Relative frequency" here.
+
+* * *
+
+### Calculating descriptive statistics for a categorical variable
+
+The *proportion* is the most important descriptive statistic for a categorical variable.  It measures the fraction of observations in a given category within a categorical variable. For example: what proportion of the BIOL202 class is female?
+
+The *proportion* of students that are female is the same as the *relative frequency* of females in the class. Earlier, using the `students` dataset, we learned how to show the relative frequencies of males and females in the class using the `prop.table` function:
+```{r}
+prop.table(xtabs(~ sex, data = students))
+```
+
+As shown above, the proportion of students that are female is 0.584.  *Proportions always fall between 0 and 1*.  
+
+* * *
+
+## Visualizing and describing a single numeric variable
+
+### Displaying the frequency distribution for one numerical variable
+
+We start by examining the *frequency distribution* of the variable of interest, which is the number of occurrences (cases) of all values in the data.  In this case, the data are numerical.  
+
+With numerical variables, such as the `height_cm` variable in the `students` dataset, it typically does not make sense to tabulate each unique value in the data (as we do with categorical variables) because there may be many, many values with only a single occurrence.  Instead, _intervals_ are created, and and the number of occurrences of values within each interval is tallied. 
+
+It is relatively uncommon in practice to report a frequency table for a numeric variable.  Much more common is to proceed directly to graphically displaying the frequency distribution using a __histogram__.
+
+* * *
+
+### Creating a histogram
+
+A __histogram__ uses the area of rectangular bars to display the frequency distribution (or relative frequency distribution) of a numerical variable.
+
+Let's construct a simple histogram of head circumference from the `students` dataset using the `histogram` function (which the `tigerstats` package actually borrows from the `lattice` and `mosaic` packages).   
+
+We need to add one argument to the otherwise familiar syntax: the `histogram` function can produce three types of histograms: "density", "percent", or "count".  We want to display the raw counts (= frequencies), so use the argument `type = "count"`:
+```{r histogram_example, fig.height = 4.5, fig.width = 4}
+histogram(~ head_circum_cm, data = students, type = "count")
+```
+
+__TIP__: Note again the same general syntax used here and with the `xtabs` and `barchartGC` functions: nice and consistent!
+
+The `histogram` function chooses the intervals or "bin widths" for you. __However__, the choice of bin width can drammatically affect the look of your histogram.  For BIOL202 students, consult p. 37 of the text for information about this.  
+
+You can change by using the argument `nint`, which stands for "number of intervals"
+
+```{r histogram_example2, fig.height = 4.5, fig.width = 4}
+histogram(~ height_cm, data = students, type = "count", nint = 5)
+```
+
+#### The `hist` function  
+
+You'll note in the histograms above that the bars don't necessarily line up with the x-axis tick marks.  
+
+This is an annoying feature of the `histogram` function from the `lattice` package (which is part of the `tigerstats` package).  
+
+As with most tasks in R, there are many ways to create a histogram. Here we'll use the `hist` command (included in the base package) instead of the `histogram` command.  
+
+```
+?hist
+```
+
+Note the added arguments, to make the figure look good:
+
+```{r histogram_example3, fig.height = 4.5, fig.width = 4}
+hist(students$height_cm, 
+     col = "grey",
+     main = "",
+     xlab = "Height (cm)",
+     las = 1,
+     ylim = c(0, 30))
+```
+
+
+If you're interested in creating fancier histograms, consult the following datacamp [tutorial](https://www.datacamp.com/community/tutorials/make-histogram-ggplot2#gs.=f3IyKo).
+
+* * *
+
+### Interpreting and describing histograms
+
+Frequency distributions for numerical variables can take on a variety of shapes, as shown in the following display of histograms:
+
+![](./more/histogram_shapes.png)
+
+* * *
+  
+Use the image above as a guide on how to describe a histogram.  Note that the asymmetric distribution displayed above is skewed _left_. 
+
+Things to note in your description:
+
+* outliers - are there observations (bars) showing up far from the others?
+* multiple modes (as in the "bimodal" example above)
+* is it symmetric?
+* is it roughly bell-shaped?
+
+Typically your histogram and its description would be accompanied by descriptive statistics (see below). 
+
+* * *
+
+### Calculating descriptive statistics for a numerical variable
+
+* When describing a numeric variable, calculate and report the __mean__ and __standard deviation__ as measures of centre and spread, respectively  
+
+* If the frequency distribution is roughly symmetric and does not have any obvious outliers, the __mean__ and the __standard deviation__ are the preferred measures of centre and spread  
+
+* If the frequency distribution is asymmetric and / or has outliers, the __median__ and the __inter-quartile range__ (IQR) are the preferred measures of centre and spread, and in this case, one often sees these reported __in addition__ to the mean and standard deviation  
+
+The `tigerstats` package we already installed includes a handy function `favstats` that can be used to calculate descriptive statistics for numeric variables.  
+
+Here we'll calculate these descriptive statistics on the height data from the `students` dataset:
+```{r summary_stats}
+favstats(~ height_cm, data = students)
+```
+
+__TIP__: Note again the syntax!
+
+You can also compute descriptive statistics one by one.  For instance, to calculate the mean, median, variance, standard deviation, and IQR of `height_cm`, type:
+
+```{r}
+mean(~ height_cm, data = students)
+median(~ height_cm, data = students)
+var(~ height_cm, data = students)
+sd(~ height_cm, data = students)
+IQR(~ height_cm, data = students)
+```
+
+**TIP**: Sometimes packages include functions that conflict in name with functions in the "base" R package (the default set of functions available to you when you start R). For example, the `tigerstats` package includes the functions `mean`, `sd`, `median` and others that share a name with functions in the base R package. This is problematic if (i) you attempt to use the syntax of, say, the `mean` function from `tigerstats`, as shown in the preceding chunks, and (ii) you have not loaded the `tigerstats` package. R will think you're trying to call its base `mean` function, which does not work the same way as the `tigerstats` version.
+
+
+* * *
+
+## List of functions (and the source packages) used in tutorial
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+* `getwd`  
+
+__Data frame structure__: 
+
+* `names`
+* `head`
+* `str`
+* `inspect` (`tigerstats` / `mosaic` packages)
+
+__Frequency tables__:
+
+* `xtabs`
+* `prop.table`
+* `rowPerc` (`tigerstats`)
+* `colPerc` (`tigerstats`)
+
+__Graphs__:
+
+* `barchartGC` (`tigerstats` / `lattice` packages)
+* `histogram` (`tigerstats` / `lattice` packages)
+* `hist` (base `stats` package)
+
+__Descriptive stats__:
+
+* `favstats` (`tigerstats` and `mosaic` packages)
+* `mean`
+* `median`
+* `var`
+* `sd`
+* `IQR`

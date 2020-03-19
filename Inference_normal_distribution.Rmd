@@ -1,0 +1,314 @@
+---
+title: "Comparing one mean to a hypothesized value"
+output:
+  html_document:
+    css: tutorial.css
+    fig_caption: yes
+    highlight: pygments
+    theme: simplex
+    toc: yes
+    toc_float: yes
+---
+
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(eval = TRUE)
+library(tigerstats, warn.conflicts = FALSE, quietly = TRUE)
+lattice.options(default.theme = standard.theme(color = FALSE))
+```
+This page was last updated on `r format(Sys.time(), '%B %d, %Y')`.
+
+* * *
+
+## Getting started
+
+In this tutorial we will learn about the following:
+
+* the Student's *t* distribution
+* Inference for a normal population: Student's *t*-test 
+* the 95% confidence interval for a mean
+
+* * *
+
+### Required packages
+
+* `tigerstats`
+
+```
+library(tigerstats)
+```
+
+* * *
+
+### Required data
+
+* the "bodytemp" dataset.  These are the data associated with Example 11.3 in the text (page 310)
+* the "stalkies" dataset. These are the data associated with Example 11.2 in the text (page 307)
+
+```{r}
+bodytemp <- read.csv(url("https://people.ok.ubc.ca/jpither/datasets/bodytemp.csv"), header = TRUE)
+stalkies <- read.csv(url("https://people.ok.ubc.ca/jpither/datasets/stalkies.csv"), header = TRUE)
+inspect(bodytemp)
+inspect(stalkies)
+```
+
+* * *
+
+## The *t* distribution for sample means
+
+As described in the text on pages 304-306, the *t* distribution resembles the standard normal distribution (the *Z* distribution), but is slighly fatter in the tails.  
+
+The *t* distribution is what we use in practice, i.e. when we're working with samples of data, when drawing inferences about normal populations for which $\mu$ and $\sigma$ are unknown.  
+
+* * *
+
+### Calculating probabilities from a *t* distribution
+
+As with the *Z* distribution, we can look up probability values (areas under the curve) associated with values of *t* in a table, such as the one provided on page 708 of the text.  
+
+Unlike the *Z* distribution, the *t* distribution changes shape depending upon the **degrees of freedom**:  
+
+*df* = *n* - 1  
+
+**Example**:  
+
+What is the probability (*P*-value) associated with obtaining a *t* statistic value of 2.1 or larger, given a sample size *n* = 11 (*df* = 10)?  
+
+To calculate this, we use the `pt` function in the base package:  
+
+```{r}
+pt(2.1, df = 10, lower.tail = FALSE) # note lower.tail argument
+```
+
+* * *
+
+### Finding critical values of *t*
+
+Without a computer, one would use tables to look up **critical values** of a test statistic like the *t* statistic.  
+
+In R, we can use the `qt` function to find the critical value of *t* associated with a given $\alpha$ level and **degrees of freedom**.  
+
+For instance, if we were testing a 2-tailed hypothesis, with $\alpha$ = 0.05, and sample size *n* = 11, here's the code:
+
+```{r}
+alpha <- 0.05 # define alpha
+n <- 11  # define n
+upper.crit <- qt(alpha/2, df = n - 1, lower.tail = FALSE) # if 2-tailed, divide alpha by 2
+lower.crit <- qt(alpha/2, df = n - 1, lower.tail = TRUE) # if 2-tailed, divide alpha by 2
+c(lower.crit, upper.crit)
+```
+
+This shows the lower and upper critical values of *t* associated with *df* = 10 and $\alpha$ = 0.05.  
+
+If we had a different value of $\alpha$, say $\alpha$ = 0.1, and the same sample size here's the code:
+
+```{r}
+alpha <- 0.10 # define alpha
+upper.crit <- qt(alpha/2, df = n - 1, lower.tail = FALSE) # if 2-tailed, divide alpha by 2
+lower.crit <- qt(alpha/2, df = n - 1, lower.tail = TRUE) # if 2-tailed, divide alpha by 2
+c(lower.crit, upper.crit)
+```
+
+We generally don't use the `qt` and `pt` functions much on their own, but now you know what they can be used for!  
+
+* * *
+
+## One-sample _t_-test      
+
+We previously learned statistical tests for testing hypotheses about categorical response variables. For instance, we learned how to conduct a $\chi$^2^ [contingency test](https://people.ok.ubc.ca/jpither/modules/Contingency_analysis.html) to test the null hypothesis that there is no association between two categorical variables.  
+
+Here we are going to learn our first statistical test for testing hypotheses about a numeric response variable, specifically one whose frequency distribution in the population is normally distributed.  
+
+* * *
+
+### Hypothesis statement
+
+We'll use the body temperature data for this example, as described in example 11.3 (Page 310) in the text.  
+
+Americans are taught as kids that the normal human body temperature is 98.6 degrees Farenheit.  
+
+Are the data consistent with this assertion?  
+
+The hypotheses for this test:  
+
+**H~0~**: The mean human body temperature is 98.6$^\circ$F.  
+**H~A~**: The mean human body temperature is not 98.6$^\circ$F.  
+
+* We'll use an $\alpha$ level of 0.05.  
+* It is a two-tailed alternative hypothesis  
+* We'll visualize the data, and interpret the graph
+* We'll use a one-sample *t*-test test to test the null hypothesis, because we're dealing with continuous numerical data, and using a sample of data to draw inferences about a population mean $\mu$   
+
+The assumptions of the one-sample *t*-test are as follows:  
+
+* the sampling units are randomly sampled from the population
+* the variable is normally distributed in the population  
+
+Under the "Extra tutorials" section of the lab webpage, go through the **Checking assumptions and data transformations**  [tutorial](https://people.ok.ubc.ca/jpither/modules/assumptions_transformations.html). There you'll learn how to check the assumption of normality. For now we'll assume both assumptions are met.  
+
+* We'll calculate our test statistic
+* We'll calculate the *P*-value associated with our test statistic
+* We'll provide a good concluding statement that includes a 95% confidence interval for the mean
+
+* * *
+
+### Visualize the data
+
+Let's view a histogram of the body temperatures.  
+
+We can use either of two different functions: the `histogram` function or the `hist` function.  
+
+```{r fig.cap = 'Figure 1: Frequency distribution of body temperature for 25 randomly chosen healthy people.', fig.width = 5, fig.height = 4}
+histogram(~ temperature, data = bodytemp,
+          type = "count",
+          breaks = seq(from = 97, to = 100.5, by = 0.5),
+          col = "firebrick",
+          las = 1,
+          xlab = "Body temperature (degrees F)",
+          ylab = "Frequency", 
+          main = "")
+```
+
+Here's the code for using the `hist` function:
+
+```{r fig.cap = 'Figure 1: Frequency distribution of body temperature for 25 randomly chosen healthy people.', fig.width = 5, fig.height = 4}
+hist(bodytemp$temperature,
+          col = "firebrick",
+          las = 1,
+          xlab = "Body temperature (degrees F)",
+          ylab = "Frequency", 
+          main = "")
+```
+
+The advantage of the `histogram` function is it uses the same syntax that we used to (using the `~` symbol), but the disadvantage is that to get the bars of the histogram to line up with the x-axis tick marks, we need to specify the "breaks" using the `breaks` argument (as done in the R chunk above for the `histogram` function). If you used the `histogram` function, it is recommended that you specify the "breaks" using the `seq` command, as above.   
+
+The advantage of the `hist` function is that it is lines up the bars with tick marks by default. The disadvantage is that it does not use the same syntax that we're used to.  
+
+> It is recommended that you use the `hist` command when visualizing the frequency distribution of a single numeric variable.  
+
+We can see in Figure 1 that the modal temperature among the 25 subjects is between 98.5 and 99$^\circ$F, which is consistent with conventional wisdom, but there are 7 people with temperature below 98$^\circ$F, and 5 with temperatures above 99$^\circ$F. The frequency distribution is unimodal but not particularly symetrical.   
+
+* * *
+
+### Conduct the *t*-test
+
+We use the `t.test` command from the `mosaic` package (installed as part of the `tigerstats` package) to conduct a one-sample _t_-test.  
+
+**NOTE**: The base `stats` package that automatically loads when you start R also includes a `t.test` function, but it doesn't have the same functionality as the `mosaic` package version.  **BE SURE** to load the `tigerstats` package prior to using the `t.test` function! 
+
+```
+?t.test  # select the version associated with the "mosaic" package
+```
+
+**TIP**: We can ensure that the correct function is used by including the package name before the function name, separated by colons:
+
+```
+mosaic::t.test
+```
+
+This function is used for both one-sample and two-sample _t_-tests (next [tutorial](https://people.ok.ubc.ca/jpither/modules/Comparing_two_means.html)), and for calculating 95% confidence intervals for a mean.  
+
+Because this function has multiple purposes, be sure to pay attention to the arguments.  
+
+You can find out more about the function at the `tigerstats` website [here](http://homerhanumat.com/tigerstats/ttestGC.html).
+
+Let's think again about what the test is doing.  In essence, it is taking the observed sample mean, transforming it to a value of *t* to fit on the _t_ distribution.  This is analogous to what we learned to do with "Z-scores", but here we're using the _t_ distribution instead of the Z distribution, because we don't know the true population parameters ($\mu$ and $\sigma$), and we're dealing with sample data.  
+
+Once we have our observed value of the test statistic _t_, we can calculate the probability of observing that value, or one of greater magnitude, _assuming the null hypothesis were true_.
+
+Here's the code, and we include the null hypothesized body temperature:  
+
+
+```{r}
+body.ttest <- mosaic::t.test(~ temperature, data = bodytemp,
+        mu = 98.6,
+        alternative = "two.sided",
+        conf.level = 0.95) 
+body.ttest
+```
+
+The output includes a 95% confidence interval for $\mu$, the calculated test statistic *t*, the degrees of freedom, and the associated *P*-value.  
+
+The observed *P*-value for our test is larger than our $\alpha$ level of 0.05.  We therefore fail to reject the null hypothesis.
+
+* * *
+
+### Concluding statement
+
+We have no reason to reject the hypothesis that the mean body temperature of a healthy human is 98.6$^\circ$F (one-sample _t_-test; _t_ = `r round(body.ttest$statistic,2)`; _n_ = 25 or *df* = 24; _P_ = `r round(body.ttest$p.value,3)`).  
+
+* * *
+
+## Confidence intervals for an estimate of $\mu$
+
+In an earlier tutorial we learned about the **rule of thumb 95% confidence interval** [here](https://people.ok.ubc.ca/jpither/modules/Sampling_Estimation_Uncertainty.html#calculating_the_rule_of_thumb_95%_confidence_interval).  
+Now we will learn how to calculate confidence intervals correctly.  
+
+Here's the code, again using the `t.test` function, but this time, if all we wish to do is calculate confidence intervals, we **do not** include a value for "mu" (as we do when we are conducting a one-sample *t*-test):  
+
+```{r}
+body.conf <- mosaic::t.test(~ temperature, data = bodytemp,
+        alternative = "two.sided",
+        conf.level = 0.95)
+body.conf
+```
+
+It is good practice to report confidence intervals (or any measure of precision) to 3 decimal places, and to include units.  
+
+We can do this in R as follows:  
+
+```{r}
+lower.cl <- round(body.conf$conf.int[1],3)
+upper.cl <- round(body.conf$conf.int[2],3)
+c(lower.cl, upper.cl)
+```
+
+**TIP**: You can get R to provide "inline" evaluation of code.  For instance, type the following code in the main text area, NOT in a chunk:
+
+```
+The 95% confidence interval for the mean is `r round(body.conf$conf.int[1],3)` to `r round(body.conf$conf.int[2],3)` $^\circ$F. 
+```
+
+... and you will get the following:  
+
+The 95% confidence interval for the mean is `r round(body.conf$conf.int[1],3)` to `r round(body.conf$conf.int[2],3)` $^\circ$F. 
+
+Now we can re-write our concluding statement and include the confidence interval:
+
+We have no reason to reject the hypothesis that the mean body temperature of a healthy human is 98.6$^\circ$F (one-sample _t_-test; _t_ = `r round(body.ttest$statistic,2)`; _n_ = 25 or *df* = 24; _P_ = `r round(body.ttest$p.value,3)`; 95% CI: `r round(body.ttest$conf.int[1],3)` - `r round(body.ttest$conf.int[2],3)` $^\circ$F).  
+
+* * *
+
+1. Practice confidence interval
+
+Using the "stalkies" dataset:  
+
+* produce a histogram of the eyespan lengths, including a good figure heading
+* calculate the 95% confidence interval for the mean eyespan length
+* calculate the 99% confidence interval for the mean eyespan length
+
+* * *
+
+## List of functions
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+
+__Data frame structure__: 
+
+* `head`
+* `inspect` (`tigerstats` / `mosaic` packages)
+
+__The "t" distribution__:
+
+* `pt`
+* `qt`
+* `t.test` (`mosaic` package loaded as part of the `tigerstats` package)
+
+__Graphs__:
+
+* `histogram`
+* `hist`

@@ -1,0 +1,74 @@
+---
+title: "Describing a numeric variable grouped by categories"
+output:
+  html_document:
+    css: tutorial.css
+    fig_caption: yes
+    highlight: pygments
+    theme: simplex
+    toc: yes
+    toc_float: yes
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(eval = T)
+library(tigerstats)
+lattice.options(default.theme = standard.theme(color = FALSE))
+```
+This page was last updated on `r format(Sys.time(), '%B %d, %Y')`.
+
+* * *
+
+## Getting started  
+
+### Import the data
+
+Import the `students.csv` data set:
+```{r read_data}
+students <- read.csv(url("https://people.ok.ubc.ca/jpither/datasets/students.csv"), header = TRUE)
+```
+
+* * *
+
+### Load the required packages
+
+Load the required `tigerstats` package:
+```{r attach_libraries}
+library(tigerstats)
+```
+
+* * *
+
+## Describing a numerical variable grouped by categories
+
+When we are visualizing how a numeric response variable is associated with a categorical explanatory variable, it is advisable to calculate descriptive statistics for the response variable grouped by category.  For instance, what is the mean and standard deviation of height for each of the sexes?
+ 
+We can do this using the `favstats` function:
+```{r summary_stats_group}
+favstats(height_cm ~ sex, data = students)
+```
+
+__TIP__: Note the syntax, with the response variable on the left of the `~` symbol, and the the explanatory (categorical) variable on the right.
+
+The `favstats` function provides all of the descriptive statistics you'd typically want to report, and more than you need. However, you can use the other functions we learned in a similar way:
+```{r desc_stats_group}
+mean(height_cm ~ sex, data = students)
+```
+
+* * *
+
+## List of functions (and the source packages) used in tutorial
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library`  
+
+__Descriptive stats__:
+
+* `favtstats`
+* `mean`
+
+
+

@@ -1,0 +1,225 @@
+---
+title: "Hypothesis testing"
+output:
+  html_document:
+    css: tutorial.css
+    fig_caption: yes
+    highlight: pygments
+    theme: simplex
+    toc: yes
+    toc_float: yes
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(eval = TRUE, cache = TRUE)
+library(tigerstats, warn.conflicts = FALSE, quietly = TRUE)
+lattice.options(default.theme = standard.theme(color = FALSE))
+```
+This page was last updated on `r format(Sys.time(), '%B %d, %Y')`.
+
+* * *
+
+## Getting started
+
+In this tutorial we will provide one example of how simulated data can be used to test hypotheses.
+
+This tutorial also illustrates how to approach hypothesis testing, and how to prepare your answer to questions that involve hypothesis tests.
+
+* * *
+
+### Required packages
+
+* the `tigerstats` package
+
+```
+library(tigerstats)
+```
+
+* * *
+
+### Required data
+
+* none
+
+* * *
+
+## A hypothesis test example
+
+When defending territories along streams, males of the damselfly species _Calopteryx maculata_ (pictured [here](https://en.wikipedia.org/wiki/Ebony_jewelwing#/media/File:Ebony_Jewelwing,_male,_Gatineau_Park.jpg)) often battle intruders in the air, flying around and around in circles with their foe for minutes at a time.  No one knows whether these battles are flown in a consistent direction, i.e. predominantly clockwise or counter-clockwise, as would be expected if the damselflies exhibited a form of "handedness", like many animals do.  
+
+A researcher was curious about this because he had worked with these damselflies for years and witnessed many territorial bouts (see exmaple research [here](http://www.nrcresearchpress.com/doi/abs/10.1139/z00-130#.WdFv0GKPKJU)).
+
+The researcher conducted a study (fictional) in which he video-recorded 20 male damselflies defending territories (all randomly sampled from a population), and determined the predominant direction of flight during circular flight battles.  One battle per damselfly was recorded, and each battle was known to involve a unique combattant.
+
+He found that in 17 out of 20 bouts the damselflies flew in the counter-clockwise direction.
+
+Should this result be considered evidence of handedness in this population?
+
+* * *
+
+### Steps to hypothesis testing
+
+* State the null (**H~0~**) and alternative (**H~A~**) hypotheses  
+* Set an $\alpha$ level (usually 0.05)  
+* Determine whether a one-tailed or two-tailed test is appropriate (almost always the latter)
+* Identify the appropriate test statistic, and calculate the test statistic value using observed data  
+* Simulate data and use them to construct a __null distribution__ for the test statistic, under the assumption of a true null hypothesis 
+* Use the __null distribution__ to determine the **_P_-value** associated with the observed test statistic  
+* Draw the appropriate conclusion and communicate it clearly  
+
+* * *
+
+For the damselfly example, we have a __random trial__ involving 20 independent battles.  We'll arbitrarily consider a counter-clockwise battle as a _success_, and we'll define the __test statistic__ as the number of "successes"" in the random trial.  
+
+If there is no preference in flight direction, then we would expect half (10 out of 20) the battles to be flown in the counter-clockwise direction, which equals a proportion of 0.5.  Thus:
+
+**H~0~: The proportion of bouts flown in a counter-clockwise direction is 0.5.**  
+
+**H~A~: The proportion of bouts flown in a counter-clockwise direction is not 0.5.** 
+
+We'll set $\alpha$ = 0.05.
+
+As indicated by the **H~A~** statement, we'll use a 2-tailed alternative hypothesis because we have no reason to exclude the possibility that clockwise battles are in fact more predominant.  
+
+* * *
+
+### Simulating data to generate a "null distribution"
+
+For our damselfly example, we can easily simulate the random trial (20 territorial flight battles, each yielding one of 2 outcomes) by recognizing that it is analagous to flipping a coin 20 times, and tallying the number of times we get "heads" (success).  
+
+The `tigerstats` package includes a function called `rflip` that simulates flipping a coin. Look at the help file associated with this function:
+
+```
+?rflip
+```
+
+We can generate an appropriate __null distribution__ by repeating this random trial many thousands of times (at least 10000) using conditions that reflect a true null hypothesis (i.e. in which the probability of getting a "heads" is indeed 0.5), and each time recording the value of the test statistic (i.e. the number of times we get "heads").
+
+We'll use the code we learned in a previous [tutorial](https://people.ok.ubc.ca/jpither/modules/Simulate_random_trials.html), but here we explicitly define a `number.of.trials` variable (stored as an integer object) so that we need only change this one line of code if in future we wish to use a different number of trials:
+
+```{r}
+set.seed(144) 
+number.of.trials <- 10000
+fly.battles <- do(number.of.trials) * rflip(20, prob = 0.5)
+head(fly.battles)
+```
+
+Now let's visualize the null distribution using the `barplot` function we learned about in the preceding tutorial ["Simulate random trials"](https://people.ok.ubc.ca/jpither/modules/Simulate_random_trials.html):
+
+First we need to tabulate the results, and then calculate the relative frequencies:
+
+```{r}
+fly.battles.table <- xtabs(~ heads, data = fly.battles) # tabulate results
+fly.battles.table.rel <- fly.battles.table / number.of.trials # calculate relative frequencies
+fly.battles.table.rel
+```
+
+And visualize them with a bar chart:
+```{r fig.cap = "Figure 2: Null distribution for 10000 random trials of 20 circular flight battles, tallying the number of 'counter-clockwise' battles in each", fig.width = 7, fig.height = 4}
+barplot(fly.battles.table.rel, 
+        las = 1, 
+        ylab = "Proportion of 10000 random trials",
+        ylim = c(0, 0.2),
+        xlim = c(0, 20))
+```
+
+* * *
+
+__NOTE__: This bar chart is not showing all of the potential outcomes (0 through 20) because in our simulation we did not actually observe any of the extreme outcomes 0, 19, and 20.
+
+* * *
+
+The null distribution above shows us that if the null hypothesis was true, the most probable outcome would be 10 counter-clockwise battles out of 20. But other outcomes are of course possible, with decreasing probability towards zero and twenty.
+
+* * *
+
+### Calculating the _P_-value
+
+The **_P_-value** is defined as the probability of observing an outcome as extreme or more extreme as the observed value of the test statistic, if the null hypothesis were true.  
+
+In our damselfly study, we observed 17 out of 20 battles to be in the counter-clockwise direction.  
+
+We can calculate a **_P_-value** as follows:  
+
+* first calculate the fraction of the `r as.integer(number.of.trials)` values in our null distribution that are equal to or greater than our observed test statistic value (here, 17)
+* if we have a 2-tailed alternative hypothesis, which we typically do, we need to __multiply this fraction by 2__, thereby accounting for extreme values at the opposite end of the null distribution.
+
+The code for completing these tasks is below.
+
+* * *
+
+__NOTE__: In future tutorials you'll learn how to calculate **_P_-values** using built-in R functions and theoretical probability distributions.
+
+* * *
+
+In the [Starter R Tutorials](https://people.ok.ubc.ca/jpither/modules/biol202_home.html) you learned how to use __logical comparison operators__ such as `>` and `<=`. We'll use these here.  
+
+We can take advantage of the fact that the logical value `TRUE` can be treated by R as the value 1. 
+
+Let's find out how many values within the variable `heads` in our `fly.battles` data frame are equal to or greater than 17:
+
+```{r}
+sum(fly.battles$heads >= 17)
+```
+
+So a total of 16 test statistic values out of the `r as.integer(number.of.trials)` in the null distribution were as extreme as our observed test statistic value of 17.
+
+Let's calculate the **_P_-value** now:
+
+```{r}
+p.value <- 2 * sum(fly.battles$heads >= 17) / number.of.trials
+p.value
+```
+
+So the **_P_-value** associated with our observed test statistic is `r p.value`.  
+
+* * *
+
+### Writing a concluding statement
+
+It is important to write a concluding statement that talks about the actual findings of the study. For example:  
+
+In their territorial bouts, the damselflies flew in a counter-clockwise direction significantly more than expected under a true null hypothesis (17 counter-clockwise flights out of *n* = 20 trials; *P*-value = `r p.value`). We therefore conclude that there is evidence of "handedness" in this population of *C. maculata*.
+
+It is also crucial that you report the sample size (here, number of random trials), the value of the observed test statistic (here 17), and the associated **_P_-value**.
+
+When we learn new types of statistical test, we'll adjust our concluding statements accordingly.
+
+* * *
+
+## Tutorial activity
+
+1. Using this tutorial as a guide, try to repeat all the steps of a hypothesis test for Example 6.2 in the text book (concerning handedness in toads).
+
+* * *
+
+## List of functions
+
+__Getting started__:
+
+* `library` 
+
+__Data frame structure__: 
+
+* `head`
+* `str`
+
+__Tabulation__:
+
+* `xtabs`
+
+__Simulation__:
+
+* `set.seed`
+* `sample`
+* `do`
+* `rflip` (from the `mosaic` package in the `tigerstats` package)
+
+__Math__:
+
+* `sum`
+
+__Graphs__:
+
+* `barplot` (different from the `barchartGC` function used in previous tutorials)
+

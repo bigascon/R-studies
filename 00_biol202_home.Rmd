@@ -1,0 +1,910 @@
+---
+title: 'BIOL202: Introduction to Biostatistics'
+output:
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+  html_document:
+    css: tutorial.css
+    highlight: pygments
+    theme: simplex
+    toc: yes
+    toc_float: yes
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(eval = T)
+```
+
+This page was last updated on `r format(Sys.time(), '%B %d, %Y')`.  
+
+It is continually being updated, so be sure to refresh the page in your browser each time you visit!  
+
+You should download copies of these helpful **cheatsheets** and have them on hand:  
+
+* [RStudio cheatsheet](https://www.rstudio.org/links/ide_cheat_sheet.pdf)
+* [R Markdown cheatsheet](https://www.rstudio.org/links/r_markdown_cheat_sheet.pdf)  
+
+These cheat sheets deal with packages that will increasingly be used in the tutorials:  
+
+* [ggplot2 cheatsheet](https://www.rstudio.org/links/data_visualization_cheat_sheet.pdf)  
+* [dplyr cheatsheet](https://www.rstudio.org/links/data_transformation_cheat_sheet.pdf)
+        
+* * *
+
+## Starter Tutorials
+
+These tutorials teach you the fundamentals of R and R Markdown, and should be completed prior to attempting any subsequent tutorials.   
+
+[Introduction to R & RStudio](https://people.ok.ubc.ca/jpither/modules/Intro_to_R.html)   
+
+* What is R and RStudio?
+* Installing R and RStudio
+* How do I code in R?
+* What are "packages"?
+* Additional resources for learning R and RStudio
+
+[Reproducible R with R Markdown](https://people.ok.ubc.ca/jpither/modules/ReproducibleR.html) **Updated**: Friday Sept 7, 3pm: I clarified instructions on creating new projects in RStudio  
+
+* Creating a reproducible lab report
+* What is R Markdown?
+* Workflow: create a project and R Markdown document
+* More R Markdown information  
+
+[Importing data into R](https://people.ok.ubc.ca/jpither/modules/Importing_data.html) **Work in progress**
+
+* * *
+
+## Assignment instructions  
+
+The following tutorial instructs you on how to prepare your assignments for submission.  
+
+[Tutorial 00: Preparing and formatting assignments for submission](https://people.ok.ubc.ca/jpither/modules/Preparing_formatting_assignments.html)   
+
+* * *
+
+
+## Visualizing and describing single variables
+
+Before conducting any analyses, it is crucial to visualize your data with effective graphs. This can help identify potential problems with the data, including data entry errors or otherwise unusual observations to be flagged. Good quality graphs can help you describe your data effectively to your audience, and are thus crucial to effective science communication.
+
+[Tutorial 01: Visualizing and describing a single variable](https://people.ok.ubc.ca/jpither/modules/Visualizing_describing_single_variable.html). **Updated Sept 17 2:30pm** I added another way to create a histogram, ones that line up the intervals with the x-axis tick marks!  
+
+* Background  
+    + With a single variable, we describe a **frequency distribution**  
+    + What kind of data? Categorical or Numeric?  
+     
+* Getting Started
+    + Import the data  
+    + Load the required packages  
+    + Get an overview of the data 
+    
+* Frequency distributions - what are they?  
+
+* Visualizing and describing a categorical variable  
+    + Creating a frequency table for one categorical variable
+    + Sorting your frequency table
+    + Creating a **bar chart**
+    + Calculating **descriptive statistics** for one categorical variable  
+  
+* Visualizing and describing a numeric variable  
+    + Creating a **histogram**
+    + Interpreting and describing histograms
+    + Calculating **descriptive statistics** for one numeric variable  
+
+* List of functions
+
+* * *
+
+## Visualizing associations between two variables
+
+[Tutorial 02: Visualizing associations between two variables](https://people.ok.ubc.ca/jpither/modules/Visualizing_association_two_variables.html). **Updated Sept. 14th, 4:20pm**: clarified how to choose layout of grouped bar graphs, and fixed figure headings. 
+
+* Background  
+    + With two variables, we are typically interested in their **association**  
+    + What kind of data? Both variables categorical? Numeric? One of each?    
+     
+* Getting Started
+    + Import the data  
+    + Load the required packages  
+    + Get an overview of the data 
+
+* Visualizing association between two categorical variables  
+    + Construct a **contingency table**
+    + Construct a **grouped bar chart**
+    + Construct a **mosaic plot**  
+    + Interpreting grouped bar charts and mosaic plots
+  
+* Visualizing association between two numeric variables  
+    + Creating a **scatterplot**
+    + Interpreting and describing a scatterplot  
+
+* Visualizing association between one numeric and one categorical variable  
+    + Construct a **stripchart**
+    + Construct a **boxplot**
+    + Interpreting stripcharts and boxplots
+
+* List of functions  
+
+* * *
+
+## Calculating descriptive statistics for one variable grouped by another
+
+[Tutorial 03: Calculating descriptive statistics for one variable grouped by another](https://people.ok.ubc.ca/jpither/modules/Describe_by_group.html).  
+
+* Getting Started
+    + Import the data  
+    + Load the required packages  
+
+* Describe a numeric variable grouped by categories  
+
+* * *
+
+## Sampling, and Estimating Parameters with Uncertainty
+
+[Tutorial 04: Sampling, Estimation, and Uncertainty](https://people.ok.ubc.ca/jpither/modules/Sampling_Estimation_Uncertainty.html) **UPDATED** September 23, 4:20pm. Added one activity and clarified a few items, and added a hint on Activity 1. **UPDATED** Sept. 30, 7:50am: provided more detail about the `sample` function.     
+
+To draw reliable inferences about properties of a population of interest (e.g. What is the average height of trees in the city of Kelowna?), one requires an unbiased, representative sample to work with.  
+
+In this tutorial you will learn how to:  
+
+* simulate random sampling from a population, to explore concepts such as sampling error  
+* quantify uncertainty around parameter estimates, such as the standard error of the mean, confidence intervals  
+* create and visualize **sampling distributions** of the mean  
+* generate a vector of random numbers drawn from a normal distribution  
+
+* * *
+
+## Random Trials
+
+[Tutorial 05: Simulate random trials](https://people.ok.ubc.ca/jpither/modules/Simulate_random_trials.html) **UPDATED** Sept. 30, 7:50am: switched the first use of the `sample` function from sampling with replacement (`replace = T`) to sampling without replacement (`replace = F`).
+
+In this tutorial we use simulations to illustrate the concept of a "random trial".   
+
+* Getting Started  
+    + Load the required package   
+    
+* Simulate random trials   
+    + Rolling a 6-sided dice  
+    + Flipping a coin  
+
+* Tutorial activity
+
+* * *
+
+## Hypothesis testing
+
+[Tutorial 06: Hypothesis_testing](https://people.ok.ubc.ca/jpither/modules/Hypothesis_testing.html)
+
+In this tutorial we learn how simulated data can be used to test hypotheses.
+
+This tutorial also illustrates how to approach hypothesis testing, and how to prepare your answer to questions that involve hypothesis tests.
+
+* Getting Started  
+    + Load the required package   
+    
+* A hypothesis test example   
+    + Steps to hypothesis testing  
+    + Simulating data to generate a "null distribution"  
+    + Calculating the **_P_-value**  
+    + Writing a concluding statement  
+
+* Tutorial activity
+
+* * *
+
+## Estimating proportions
+
+[Tutorial 07: Estimating proportions](https://people.ok.ubc.ca/jpither/modules/Estimating_proportions.html) **Updated** minor edits Sunday October 7, 9:55am  
+
+* Getting Started  
+    + Load the required packages
+    + Required data
+    
+* The __Sampling Distribution for a Proportion__  
+    + A refresher
+    + Simulating the sampling distribution for a proportion
+    + Visualizing the sampling distribution for a proportion   
+
+* Properties of the sampling distribution for a proportion  
+
+* Calculating the __Standard Error for a Proportion__  
+
+* Calculating a __Confidence interval for a Proportion__  
+
+* [Solutions to Activities](https://people.ok.ubc.ca/jpither/modules/Proportion_activity_solutions.html)  
+
+* * *
+
+## The binomial distribution and the binomial test
+
+**NOTE**: The binomial test is a type of "Goodness of Fit" test, which we learn more about in the next tutorial. In this case, we're examining a single categorical variable that has 2 categories only, and we're interested in whether the frequencies of observervations in the 2 categories fit our expectations based on the binomial distribution.  
+
+[Tutorial 08: Binomial distribution](https://people.ok.ubc.ca/jpither/modules/Binomial_distribution.html) **Updated** minor edits Sunday October 7, 9:55am   
+
+* Getting Started  
+    + Load the required packages
+    + Required data
+    
+* The __Binomial Distribution__  
+    + Simulating a random trial
+  
+* Binomial distribution functions in R  
+
+* Binomial hypothesis test  
+    + Steps to hypothesis testing
+    + Ideal concluding statement for a hypothesis test 
+
+* Confidence interval approach to hypothesis testing  
+
+* [Solutions to Activities](https://people.ok.ubc.ca/jpither/modules/Binomial_activity_solutions.html)
+
+* * *
+
+## Goodness of fit tests
+
+**NOTE**: Here we're examining a single categorical variable that has **more** than 2 categories, and we're interested in whether the frequencies of observervations among the categories fit our expectations based on some model, such as the **proportional model**.  
+
+[Tutorial 09: Goodness of fit tests](https://people.ok.ubc.ca/jpither/modules/Goodness_of_fit_tests.html) **Updated** minor edits Sunday October 7, 9:55am   
+
+* Getting Started  
+    + Install and load the required packages  
+    + Import the data  
+    + Presenting a nice table using R Markdown
+    + Greek symbols in R Markdown  
+
+* Refresher   
+
+* A Goodness of Fit hypothesis test example   
+    + The research hypothesis  
+    + Steps to hypothesis testing  
+    + Stating the null and alternative statistical hypotheses  
+    + Visualizing the data  
+    + The $\chi$^2^ test statistic
+    + The sampling distribution of the $\chi$^2^ test statistic     
+    + Calculating the expected proportions 
+    + Calculating the expected frequencies
+    + Assumptions of the $\chi$^2^ GOF test
+    + Finding the critical value of $\chi$^2^  
+    + Conducting the $\chi$^2^ test  
+    + Concluding statement   
+
+* List of functions  
+
+* [Solutions to Activities](https://people.ok.ubc.ca/jpither/modules/GOF_activity_solution.html)
+
+* * *
+
+## Odds ratio
+
+**NOTE**: Here we're examining associations between two categorical variables that each have 2 categories. The Odds Ratio method are typically only used when analyzing health related data.  
+
+[Tutorial 10: Odds Ratio](https://people.ok.ubc.ca/jpither/modules/Odds_ratio.html) 
+
+* Getting Started  
+    + Install and load the required packages  
+    + Import the required data  
+
+* Visualize the data   
+    + Contingency table  
+    + Mosaic plot  
+    
+* Estimate the odds of an outcome   
+    
+* Estimate the odds ratio   
+    
+* List of functions   
+
+* * *
+
+## Contingency analysis
+
+**NOTE**: Here we're examining associations between two categorical variables.  
+
+[Tutorial 11: Contingency Analysis](https://people.ok.ubc.ca/jpither/modules/Contingency_analysis.html) **UPDATED**: Oct. 13, 4:05pm (I reorganized the $\chi$^2^ Contingency Test section for consistency with the Fisher's exact test section)
+
+* Getting Started  
+    + Install and load the required packages  
+    + Import the required data  
+
+* Fisher's Exact Test on a **2 x 2** table     
+    + Hypothesis statement  
+    + Display a Contingency table  
+    + Display a Mosaic plot  
+    + Conduct the Fisher's Exact test  
+    + Concluding statement 
+    
+* $\chi$^2^ Contingency Test on a **m x n** table     
+    + Hypothesis statement  
+    + Display a Contingency table  
+    + Display a Mosaic plot  
+    + Check assumptions  
+    + Get results of the test  
+    + Concluding statement 
+
+* List of functions   
+
+* * *
+
+## The normal distribution
+
+[Tutorial 12: Normal distribution](https://people.ok.ubc.ca/jpither/modules/Normal_distribution.html)   
+
+* Getting Started  
+    + Install and load the required packages  
+    + Import the required data  
+
+* The Gaussian (normal) distribution    
+
+* Generating a normal distribution    
+
+* The central limit theorem - a simulation  
+
+* The standard normal distribution    
+    + Calculating _Z_-scores  
+    + Calculating probabilities with a normal distribution   
+    + Calculating probabilities of sample means  
+    + Calculating percentiles from a normal population  
+
+* List of functions    
+
+* * *
+
+## Comparing one mean to a hypothesized value
+
+**NOTE**: Here we're examining a single _numeric variable_, and comparing its mean to some expectation.  
+
+[Tutorial 13: Comparing one mean to a hypothesized value](https://people.ok.ubc.ca/jpither/modules/Inference_normal_distribution.html) **UPDATED** October 20, 8pm (The function `t.test` is now used for all *t*-tests, no longer using `ttestGC` function)  
+
+**UPDATED** November 18th, to use either the `histogram` or `hist` function for visualizing the data  
+
+**NOTE**: you must also consult the [Checking assumptions and data transformations](https://people.ok.ubc.ca/jpither/modules/assumptions_transformations.html) tutorial.  
+
+**NOTE**: A tutorial covering "non-parametric" tests, which are used when assumptions of parametric tests (like the *t*-test), is in preparation, but will not be complete until early 2019. In the meantime, you can explore some non-parametric tests [here](https://www.statmethods.net/stats/nonparametric.html).
+
+* Getting Started  
+    + Install and load the required packages  
+    + Import the required data  
+
+* The *t* distribution for sample means
+    + Calculating probabilities from a *t* distribution
+    + Finding critical values of *t*  
+    + Import the required dat  
+    
+* One-sample _t_-test    
+    + Hypothesis statement
+    + Visualize the data  
+    + Conduct the *t*-test
+    + Concluding statement
+
+* Confidence intervals for an estimate of $\mu$ 
+
+* Activity: Practice confidence interval  
+
+* List of functions    
+
+* * *
+
+## Comparing two means
+
+**NOTE**: Here we're examining a single _numeric variable_ in relation to a single _categorical variable_ that has only 2 groups.  
+
+[Tutorial 14: Comparing two means](https://people.ok.ubc.ca/jpither/modules/Comparing_two_means.html) **UPDATED** October 20, 8pm (The function `t.test` is now used for all *t*-tests, no longer using `ttestGC` function)   
+
+**NOTE**: you must also consult the [Checking assumptions and data transformations](https://people.ok.ubc.ca/jpither/modules/assumptions_transformations.html) tutorial.  
+
+**NOTE**: A tutorial covering "non-parametric" tests, which are used when assumptions of parametric tests (like the *t*-test), is in preparation, but will not be complete until early 2019. In the meantime, you can explore some non-parametric tests [here](https://www.statmethods.net/stats/nonparametric.html).
+
+* Getting Started  
+    + Install and load the required packages  
+    + Import the required data  
+
+* Paired *t*-test
+    + Data structure: long versus wide format
+    + Hypothesis statements  
+    + Assumptions of the paired *t*-test
+    + Visualize the data
+    + Check assumptions
+    + Conduct the test
+    + Draw a conclusion
+    
+* Two-sample _t_-test    
+    + Hypothesis statements  
+    + Assumptions of the two-sample *t*-test
+    + Visualize the data
+    + Check assumptions
+    + Conduct the test
+    + Draw a conclusion
+
+* When assumptions aren't met 
+
+* List of functions    
+
+* * *
+
+## Analysis of Variance
+
+**NOTE**: Here we're examining a single _numeric variable_ in relation to a single _categorical variable_ that has more than 2 groups.  
+
+[Tutorial 15: Comparing means among more than two groups using ANOVA](https://people.ok.ubc.ca/jpither/modules/Comparing_more_than_2_means.html) 
+
+* Getting Started  
+    + Install and load the required packages  
+    + Import the required data  
+
+* ANOVA
+    + Steps to hypothesis testing
+    + Additional steps for ANOVA  
+    + Hypothesis statements
+    + Visualize the data
+    + Stripchart with error bars
+    + Check assumptions
+    + Table of descriptive statistics
+    + Conduct the ANOVA test
+    + Generate a one-way ANOVA table
+    + Diversion: create a function
+    + Concluding statement (Part 1)
+    + Add coefficient of determination (R^2^) to conclusion
+    + Tukey-Kramer post-hoc test
+    + Visualizing the result of the post-hoc test
+    + Concluding statement (Part 2)  
+    
+
+* List of functions    
+
+If you wish, you can download the R Markdown file that generated the tutorial [here](https://people.ok.ubc.ca/jpither/modules/Comparing_more_than_2_means.Rmd). For it to work, you also need to download a "css" file linked [here](https://people.ok.ubc.ca/jpither/modules/tutorial.css) (called "tutorial.css"), and place it in a directory one down from your working directory. 
+
+* * *
+
+## Data Transformations  
+
+**NOTE**: Tutorial_16 no longer exists; its material is now covered in the [Checking assumptions and data transformations](https://people.ok.ubc.ca/jpither/modules/assumptions_transformations.html) 
+
+* * *
+
+## Correlation analysis  
+
+[Tutorial 17: Correlation analysis](https://people.ok.ubc.ca/jpither/modules/Correlation.html)  
+* Getting Started  
+    + Install and load the required packages  
+    + Import the required data  
+
+* Pearson correlation analysis
+    + Hypothesis testing
+    + Hypothesis statements
+    + Visualize the data
+    + Interpreting a scatterplots
+    + Assumptions of correlation analysis
+    + Conduct the correlation analysis
+    + Draw a conclusion  
+    
+* Rank correlation analysis - Spearman's correlation
+    + Hypothesis statements
+    + Visualize the data
+    + Assumptions of rank correlation analysis
+    + Checking assumptions
+    + Conduct the test 
+    + Draw a conclusion  
+    
+* List of functions
+
+* * *
+
+## Regression analysis  
+
+[Tutorial 18: Regression analysis](https://people.ok.ubc.ca/jpither/modules/least_squares_regression.html) **UPDATED** on November 11, 10:20pm. **UPDATED** again on November 18th: minor correction of the heading for the checking assumptions section   
+
+* Getting Started  
+    + Install and load the required packages  
+    + Import the required data  
+    + Data exploration  
+
+* Regression analysis
+    + Hypothesis testing - not really!
+    + Steps to conducting regression analysis
+    + Plant biomass example
+    + Visualize the data
+    + Interpreting a scatterplots
+    + Assumptions of regression analysis
+    + Transform the data if required
+    + Conduct the regression analysis
+    + Confidence interval for the slope
+    + Scatterplot with regression confidence bands
+    + Concluding statement  
+
+* Model I versus Model II regression
+
+* Making predictions
+    + Back-transforming regression predictions
+
+* List of functions  
+
+* RMD file
+    
+* * *
+
+## Markdown files for the tutorials
+
+You can download all the RMD files for tutorials 0 through 18 [here](https://people.ok.ubc.ca/jpither/modules/Tutorials.zip). It is a "zip" file that contains:  
+
+* 19 RMD files  
+* a sub-directory called "more" that includes various images and other things that the RMD files refer to
+* a file "tutorial.css" that is used by the RMD files to define the formatting  
+
+To successfully knit these RMD files yourself, you must maintain the directory structure that is provided when you unzip the ZIP file. That is, the "more" subdirectory must be in the same directory as the RMD files, and the "tutorial.css" file must be located in the same directory as the RMD files.  
+
+* * *
+
+## Extra tutorials  
+
+[Checking assumptions and data transformations](https://people.ok.ubc.ca/jpither/modules/assumptions_transformations.html)  
+
+* Getting Started  
+    + Install and load the required packages  
+    + Import the required data  
+
+* Checking the normality assumption
+    + Histograms and normal quantile plots
+    + Shapiro-Wilk test for normality  
+    
+* Data transformations    
+    + log-transform
+    + Dealing with zeroes  
+    + log bases
+    + back-transforming log data
+    + logit transform
+    + back-transforming logit data
+    + when to back-transform?
+
+* List of functions
+
+[Tables in R Markdown](https://people.ok.ubc.ca/jpither/modules/Tables_markdown.html)  
+
+* Getting Started  
+    + Load the required packages  
+    + Import the data  
+    + Change the class of a variable  
+    + Visualize the data  
+    + Calculate descriptive statistics  
+
+* Creating and formatting a table  
+* Extra help
+
+[Symbols in R Markdown](https://people.ok.ubc.ca/jpither/modules/Symbols_markdown.html)  
+
+* Additional resources  
+* Greek symbols  
+* Math notation  
+* Statistics notation  
+* Miscellaneous  
+* Cheatsheets  
+
+[Importing data into R](https://people.ok.ubc.ca/jpither/modules/importing_data.html) **Work in progress**  
+
+* * *
+
+## Master list of functions by lab
+
+[Master function list](https://people.ok.ubc.ca/jpither/modules/list_of_functions.html)
+
+* * *
+
+---
+title: "Comparing one mean to a hypothesized value"
+output:
+  html_document:
+    css: tutorial.css
+    fig_caption: yes
+    highlight: pygments
+    theme: simplex
+    toc: yes
+    toc_float: yes
+---
+
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(eval = TRUE)
+library(tigerstats, warn.conflicts = FALSE, quietly = TRUE)
+lattice.options(default.theme = standard.theme(color = FALSE))
+```
+This page was last updated on `r format(Sys.time(), '%B %d, %Y')`.
+
+* * *
+
+## Getting started
+
+In this tutorial we will learn about the following:
+
+* the Student's *t* distribution
+* Inference for a normal population: Student's *t*-test 
+* the 95% confidence interval for a mean
+
+* * *
+
+### Required packages
+
+* `tigerstats`
+
+```
+library(tigerstats)
+```
+
+* * *
+
+### Required data
+
+* the "bodytemp" dataset.  These are the data associated with Example 11.3 in the text (page 310)
+* the "stalkies" dataset. These are the data associated with Example 11.2 in the text (page 307)
+
+```{r}
+bodytemp <- read.csv(url("https://people.ok.ubc.ca/jpither/datasets/bodytemp.csv"), header = TRUE)
+stalkies <- read.csv(url("https://people.ok.ubc.ca/jpither/datasets/stalkies.csv"), header = TRUE)
+inspect(bodytemp)
+inspect(stalkies)
+```
+
+* * *
+
+## The *t* distribution for sample means
+
+As described in the text on pages 304-306, the *t* distribution resembles the standard normal distribution (the *Z* distribution), but is slighly fatter in the tails.  
+
+The *t* distribution is what we use in practice, i.e. when we're working with samples of data, when drawing inferences about normal populations for which $\mu$ and $\sigma$ are unknown.  
+
+* * *
+
+### Calculating probabilities from a *t* distribution
+
+As with the *Z* distribution, we can look up probability values (areas under the curve) associated with values of *t* in a table, such as the one provided on page 708 of the text.  
+
+Unlike the *Z* distribution, the *t* distribution changes shape depending upon the **degrees of freedom**:  
+
+*df* = *n* - 1  
+
+**Example**:  
+
+What is the probability (*P*-value) associated with obtaining a *t* statistic value of 2.1 or larger, given a sample size *n* = 11 (*df* = 10)?  
+
+To calculate this, we use the `pt` function in the base package:  
+
+```{r}
+pt(2.1, df = 10, lower.tail = FALSE) # note lower.tail argument
+```
+
+* * *
+
+### Finding critical values of *t*
+
+Without a computer, one would use tables to look up **critical values** of a test statistic like the *t* statistic.  
+
+In R, we can use the `qt` function to find the critical value of *t* associated with a given $\alpha$ level and **degrees of freedom**.  
+
+For instance, if we were testing a 2-tailed hypothesis, with $\alpha$ = 0.05, and sample size *n* = 11, here's the code:
+
+```{r}
+alpha <- 0.05 # define alpha
+n <- 11  # define n
+upper.crit <- qt(alpha/2, df = n - 1, lower.tail = FALSE) # if 2-tailed, divide alpha by 2
+lower.crit <- qt(alpha/2, df = n - 1, lower.tail = TRUE) # if 2-tailed, divide alpha by 2
+c(lower.crit, upper.crit)
+```
+
+This shows the lower and upper critical values of *t* associated with *df* = 10 and $\alpha$ = 0.05.  
+
+If we had a different value of $\alpha$, say $\alpha$ = 0.1, and the same sample size here's the code:
+
+```{r}
+alpha <- 0.10 # define alpha
+upper.crit <- qt(alpha/2, df = n - 1, lower.tail = FALSE) # if 2-tailed, divide alpha by 2
+lower.crit <- qt(alpha/2, df = n - 1, lower.tail = TRUE) # if 2-tailed, divide alpha by 2
+c(lower.crit, upper.crit)
+```
+
+We generally don't use the `qt` and `pt` functions much on their own, but now you know what they can be used for!  
+
+* * *
+
+## One-sample _t_-test      
+
+We previously learned statistical tests for testing hypotheses about categorical response variables. For instance, we learned how to conduct a $\chi$^2^ [contingency test](https://people.ok.ubc.ca/jpither/modules/Contingency_analysis.html) to test the null hypothesis that there is no association between two categorical variables.  
+
+Here we are going to learn our first statistical test for testing hypotheses about a numeric response variable, specifically one whose frequency distribution in the population is normally distributed.  
+
+* * *
+
+### Hypothesis statement
+
+We'll use the body temperature data for this example, as described in example 11.3 (Page 310) in the text.  
+
+Americans are taught as kids that the normal human body temperature is 98.6 degrees Farenheit.  
+
+Are the data consistent with this assertion?  
+
+The hypotheses for this test:  
+
+**H~0~**: The mean human body temperature is 98.6$^\circ$F.  
+**H~A~**: The mean human body temperature is not 98.6$^\circ$F.  
+
+* We'll use an $\alpha$ level of 0.05.  
+* It is a two-tailed alternative hypothesis  
+* We'll visualize the data, and interpret the graph
+* We'll use a one-sample *t*-test test to test the null hypothesis, because we're dealing with continuous numerical data, and using a sample of data to draw inferences about a population mean $\mu$   
+
+The assumptions of the one-sample *t*-test are as follows:  
+
+* the sampling units are randomly sampled from the population
+* the variable is normally distributed in the population  
+
+Under the "Extra tutorials" section of the lab webpage, go through the **Checking assumptions and data transformations**  [tutorial](https://people.ok.ubc.ca/jpither/modules/assumptions_transformations.html). There you'll learn how to check the assumption of normality. For now we'll assume both assumptions are met.  
+
+* We'll calculate our test statistic
+* We'll calculate the *P*-value associated with our test statistic
+* We'll provide a good concluding statement that includes a 95% confidence interval for the mean
+
+* * *
+
+### Visualize the data
+
+Let's view a histogram of the body temperatures.  
+
+We can use either of two different functions: the `histogram` function or the `hist` function.  
+
+```{r fig.cap = 'Figure 1: Frequency distribution of body temperature for 25 randomly chosen healthy people.', fig.width = 5, fig.height = 4}
+histogram(~ temperature, data = bodytemp,
+          type = "count",
+          breaks = seq(from = 97, to = 100.5, by = 0.5),
+          col = "firebrick",
+          las = 1,
+          xlab = "Body temperature (degrees F)",
+          ylab = "Frequency", 
+          main = "")
+```
+
+Here's the code for using the `hist` function:
+
+```{r fig.cap = 'Figure 1: Frequency distribution of body temperature for 25 randomly chosen healthy people.', fig.width = 5, fig.height = 4}
+hist(bodytemp$temperature,
+          col = "firebrick",
+          las = 1,
+          xlab = "Body temperature (degrees F)",
+          ylab = "Frequency", 
+          main = "")
+```
+
+The advantage of the `histogram` function is it uses the same syntax that we used to (using the `~` symbol), but the disadvantage is that to get the bars of the histogram to line up with the x-axis tick marks, we need to specify the "breaks" using the `breaks` argument (as done in the R chunk above for the `histogram` function). If you used the `histogram` function, it is recommended that you specify the "breaks" using the `seq` command, as above.   
+
+The advantage of the `hist` function is that it is lines up the bars with tick marks by default. The disadvantage is that it does not use the same syntax that we're used to.  
+
+> It is recommended that you use the `hist` command when visualizing the frequency distribution of a single numeric variable.  
+
+We can see in Figure 1 that the modal temperature among the 25 subjects is between 98.5 and 99$^\circ$F, which is consistent with conventional wisdom, but there are 7 people with temperature below 98$^\circ$F, and 5 with temperatures above 99$^\circ$F. The frequency distribution is unimodal but not particularly symetrical.   
+
+* * *
+
+### Conduct the *t*-test
+
+We use the `t.test` command from the `mosaic` package (installed as part of the `tigerstats` package) to conduct a one-sample _t_-test.  
+
+**NOTE**: The base `stats` package that automatically loads when you start R also includes a `t.test` function, but it doesn't have the same functionality as the `mosaic` package version.  **BE SURE** to load the `tigerstats` package prior to using the `t.test` function! 
+
+```
+?t.test  # select the version associated with the "mosaic" package
+```
+
+**TIP**: We can ensure that the correct function is used by including the package name before the function name, separated by colons:
+
+```
+mosaic::t.test
+```
+
+This function is used for both one-sample and two-sample _t_-tests (next [tutorial](https://people.ok.ubc.ca/jpither/modules/Comparing_two_means.html)), and for calculating 95% confidence intervals for a mean.  
+
+Because this function has multiple purposes, be sure to pay attention to the arguments.  
+
+You can find out more about the function at the `tigerstats` website [here](http://homerhanumat.com/tigerstats/ttestGC.html).
+
+Let's think again about what the test is doing.  In essence, it is taking the observed sample mean, transforming it to a value of *t* to fit on the _t_ distribution.  This is analogous to what we learned to do with "Z-scores", but here we're using the _t_ distribution instead of the Z distribution, because we don't know the true population parameters ($\mu$ and $\sigma$), and we're dealing with sample data.  
+
+Once we have our observed value of the test statistic _t_, we can calculate the probability of observing that value, or one of greater magnitude, _assuming the null hypothesis were true_.
+
+Here's the code, and we include the null hypothesized body temperature:  
+
+
+```{r}
+body.ttest <- mosaic::t.test(~ temperature, data = bodytemp,
+        mu = 98.6,
+        alternative = "two.sided",
+        conf.level = 0.95) 
+body.ttest
+```
+
+The output includes a 95% confidence interval for $\mu$, the calculated test statistic *t*, the degrees of freedom, and the associated *P*-value.  
+
+The observed *P*-value for our test is larger than our $\alpha$ level of 0.05.  We therefore fail to reject the null hypothesis.
+
+* * *
+
+### Concluding statement
+
+We have no reason to reject the hypothesis that the mean body temperature of a healthy human is 98.6$^\circ$F (one-sample _t_-test; _t_ = `r round(body.ttest$statistic,2)`; _n_ = 25 or *df* = 24; _P_ = `r round(body.ttest$p.value,3)`).  
+
+* * *
+
+## Confidence intervals for an estimate of $\mu$
+
+In an earlier tutorial we learned about the **rule of thumb 95% confidence interval** [here](https://people.ok.ubc.ca/jpither/modules/Sampling_Estimation_Uncertainty.html#calculating_the_rule_of_thumb_95%_confidence_interval).  
+Now we will learn how to calculate confidence intervals correctly.  
+
+Here's the code, again using the `t.test` function, but this time, if all we wish to do is calculate confidence intervals, we **do not** include a value for "mu" (as we do when we are conducting a one-sample *t*-test):  
+
+```{r}
+body.conf <- mosaic::t.test(~ temperature, data = bodytemp,
+        alternative = "two.sided",
+        conf.level = 0.95)
+body.conf
+```
+
+It is good practice to report confidence intervals (or any measure of precision) to 3 decimal places, and to include units.  
+
+We can do this in R as follows:  
+
+```{r}
+lower.cl <- round(body.conf$conf.int[1],3)
+upper.cl <- round(body.conf$conf.int[2],3)
+c(lower.cl, upper.cl)
+```
+
+**TIP**: You can get R to provide "inline" evaluation of code.  For instance, type the following code in the main text area, NOT in a chunk:
+
+```
+The 95% confidence interval for the mean is `r round(body.conf$conf.int[1],3)` to `r round(body.conf$conf.int[2],3)` $^\circ$F. 
+```
+
+... and you will get the following:  
+
+The 95% confidence interval for the mean is `r round(body.conf$conf.int[1],3)` to `r round(body.conf$conf.int[2],3)` $^\circ$F. 
+
+Now we can re-write our concluding statement and include the confidence interval:
+
+We have no reason to reject the hypothesis that the mean body temperature of a healthy human is 98.6$^\circ$F (one-sample _t_-test; _t_ = `r round(body.ttest$statistic,2)`; _n_ = 25 or *df* = 24; _P_ = `r round(body.ttest$p.value,3)`; 95% CI: `r round(body.ttest$conf.int[1],3)` - `r round(body.ttest$conf.int[2],3)` $^\circ$F).  
+
+* * *
+
+1. Practice confidence interval
+
+Using the "stalkies" dataset:  
+
+* produce a histogram of the eyespan lengths, including a good figure heading
+* calculate the 95% confidence interval for the mean eyespan length
+* calculate the 99% confidence interval for the mean eyespan length
+
+* * *
+
+## List of functions
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+
+__Data frame structure__: 
+
+* `head`
+* `inspect` (`tigerstats` / `mosaic` packages)
+
+__The "t" distribution__:
+
+* `pt`
+* `qt`
+* `t.test` (`mosaic` package loaded as part of the `tigerstats` package)
+
+__Graphs__:
+
+* `histogram`
+* `hist`
+
+
+
+

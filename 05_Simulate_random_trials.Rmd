@@ -1,0 +1,221 @@
+---
+title: "Simulating random trials"
+output:
+  html_document:
+    css: tutorial.css
+    fig_caption: yes
+    highlight: pygments
+    theme: simplex
+    toc: yes
+    toc_float: yes
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(eval = TRUE, cache = TRUE)
+library(tigerstats, warn.conflicts = FALSE, quietly = TRUE)
+lattice.options(default.theme = standard.theme(color = FALSE))
+```
+This page was last updated on `r format(Sys.time(), '%B %d, %Y')`.
+
+* * *
+
+## Getting started
+
+In this tutorial you will learn how to:  
+
+* simulate random trials
+
+* * *
+
+### Required packages
+
+* the `tigerstats` package
+
+```
+library(tigerstats)
+```
+
+* * *
+
+### Required data
+
+* none
+
+* * *
+
+## Simulate random trials
+
+### Rolling a 6-sided dice
+
+If you roll a fair six-sided dice once, you have a 1 in 6 chance of rolling any one of the possible __outcomes__, i.e. numbers 1 through 6.  
+
+Let's define our __random trial__ as the rolling of a fair 6-sided dice, and rolling the number 2 as our __event__ of interest.  The __probability__ of rolling a 2 is of course 1/6, or 0.16667.  
+
+Let's __simulate__ this `random trial` in R. We'll use the `sample` function you learned about in a previous [tutorial](https://people.ok.ubc.ca/jpither/modules/Sampling_Estimation_Uncertainty.html). 
+
+Recall that whenever we implement some procedure in R that requires the use of a random draw or something similar, we first need to use the `set.seed` function to ensure we all get the same results (i.e. we can achieve "computational reproducibility"):
+
+```{r}
+set.seed(2015)
+```
+
+Here we simulate one roll of a 6-sided dice.  
+
+**Recall**: the code `1:6` produces a vector of integers one through 6, and the `replace = F` argument tells R to "sample without replacement", as described in a previous [tutorial](https://people.ok.ubc.ca/jpither/modules/Sampling_Estimation_Uncertainty.html).
+
+```{r}
+sample(1:6, size = 1, replace = FALSE)
+```
+
+You should see the number 1.
+
+**Recall**:  
+
+> A probability of an event is the proportion of times the event would occur if we repeated a random trial over and over again under the same conditions  
+
+If we were to roll the dice many thousands of times, we should expect to roll the number 2 approximately a sixth of the time, i.e. with a proportion 1/6 or 0.16667.  
+
+Let's simulate this process, by rolling a dice 10000 times, and storing the outcome of each of these 10000 random trials in an object called `many.rolls`.
+
+Rather than using the `sapply` function you learned about in an earlier [tutorial](https://people.ok.ubc.ca/jpither/modules/Sampling_Estimation_Uncertainty.html), we're going to use the `do` function from the `mosaic` package (which is automatically loaded as part of the `tigerstats` package).
+
+__NOTE__: Henceforth, we'll use the `do` function rather than `sapply` because its syntax and use is much easier to understand.  Note, however, that it is not quite as computationally efficient as `sapply` (not a problem for our purposes).  
+
+```{r}
+many.rolls <- do(10000) * sample(1:6, size = 1, replace = FALSE)
+```
+
+The `do` function simply tells R to repeat whatever is after the `*`.  Here we ask it to repeat the sampling process 10000 times.  
+
+Let's also look at the structure of the resulting object using the `str` function:
+```{r}
+str(many.rolls)
+```
+
+We see that the repeated `sample` procedure, when assigned to an object, produced a data frame (we called it `many.rolls`) that includes one integer variable called `sample`.
+
+Now let's tabulate the results: how many times was each of the numbers 1 through 6 rolled, out of 10000 trials?
+
+```{r}
+many.rolls.table <- xtabs(~sample, data = many.rolls)
+many.rolls.table
+```
+
+We rolled the number two 1631 times out of 10000.
+
+Now let's calculate the `relative frequencies` by dividing these frequencies by the total number, i.e. 10000:
+
+```{r}
+many.rolls.table.rel <- many.rolls.table / 10000
+many.rolls.table.rel
+```
+
+The proportion of times we rolled the number two was 0.1631, which is very close to the probability we expected (0.1667).
+
+Let's visualize this with a bar chart.
+
+* * *
+
+__TIP__: If you have already calculated and stored the relative frequencies of a categorical variable or an integer variable such as this one, then you should use the `barplot` function to create a bar chart, __not__ the `barchartGC` function.  The `barplot` function simply creates bars with heigths defined by the values in the object.
+
+* * *
+
+```{r fig.cap = "Figure 1: Bar chart of the outcomes of 10000 rolls of a fair, 6-sided dice.", fig.height = 4, fig.width = 5}
+barplot(many.rolls.table.rel, 
+        las = 1, 
+        ylim = c(0, 0.2))
+```
+
+The `las = 1` argument tells the barplot function to make sure the y-axis labels are oriented horizontally.  
+The `ylim = c(0, 0.2)` argument provides the lower and upper limits to the y-axis. 
+
+* * *
+
+### Flipping a coin
+
+Now let's simulate a random trial in which a fair coin is tossed, and in which a `heads` is considered a `success`.
+
+We can use the handy `rflip` function from the `mosaic` package, which is loaded as part of the `tigerstats` package.
+
+Check out the function's help file:
+
+```
+?rflip
+```
+
+Note that the default value for the `prob` argument is 0.5, meaning we have a fair coin for which the probability of getting a `heads` is 0.5.  
+
+An unfair coin would have a `prob` value different from 0.5.
+
+Let's flip a coin once, to see what the output looks like, remembering to `set.seed` first:
+
+```{r}
+set.seed(100)
+do(1) * rflip(1, prob = 0.5)
+```
+
+In this instance we were unsuccessfull in getting a `heads`.
+
+Let's re-define our __random trial__ as being 10 flips of the coin, and let's simulate repeating this random trial 10000 times, storing the number of heads (successes) per trial in a new object `coin.results`.  
+
+In each random trial, we could get anywhere from zero heads (very unlikely) to ten heads (equally unlikely), but most commonly we would expect to get heads 5 times out of the 10 flips, i.e. half the time.
+
+```{r}
+set.seed(10)
+coin.results <- do(10000) * rflip(10, prob = 0.5)
+head(coin.results)
+```
+
+Now let's tabulate the results, calculating the relative frequencies:
+
+```{r}
+coin.results.table <- xtabs(~ heads, data = coin.results)
+coin.results.table.rel <- coin.results.table / 10000
+coin.results.table.rel
+```
+
+And visualize them with a bar chart:
+```{r fig.cap = "Figure 2: Bar chart of the outcomes of 10000 flips of a coin.", fig.height = 4, fig.width = 5}
+barplot(coin.results.table.rel, las = 1)
+```
+
+* * *
+
+## Tutorial activity
+
+1. Conduct your own simulation
+
+* Consult the red versus blue shirt wrestling example in the lecture notes
+* Consider a single random trial as 20 wrestling matches
+* In each match, one combattant wears blue and one wears red
+* Simulate 10000 random trials, assuming no advantage to either red or blue shirts
+* Produce a bar chart of the relative frequencies of all possible outcomes, as we did above for the coin tossing example
+
+* * *
+
+## List of functions
+
+__Getting started__:
+
+* `library` 
+
+__Data frame structure__: 
+
+* `head`
+* `str`
+
+__Tabulation__:
+
+* `xtabs`
+
+__Simulation__:
+
+* `set.seed`
+* `sample`
+* `do`
+* `rflip` (from the `mosaic` package in the `tigerstats` package)
+
+__Graphs__:
+
+* `barplot` (different from the `barchartGC` function used in previous tutorials)
+

@@ -1,0 +1,391 @@
+---
+title: "Binomial Distribution"
+output:
+  html_document:
+    css: tutorial.css
+    fig_caption: yes
+    highlight: pygments
+    theme: simplex
+    toc: yes
+    toc_float: yes
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(eval = TRUE)
+library(tigerstats, warn.conflicts = FALSE, quietly = TRUE)
+library(png, warn.conflicts = FALSE, quietly = TRUE)
+library(grid, warn.conflicts = FALSE, quietly = TRUE)
+lattice.options(default.theme = standard.theme(color = FALSE))
+```
+This page was last updated on `r format(Sys.time(), '%B %d, %Y')`.
+
+* * *
+
+## Getting started
+
+In this tutorial we will learn about the following:
+
+* The **Binomial distribution**
+* Conducting a **Binomial hypothesis test**
+* Learn the proper concluding statement for a **Binomial test**
+* Using a **Confidence-interval approach** to hypothesis testing
+
+* * *
+
+### Required packages
+
+* the `tigerstats` package
+
+```
+library(tigerstats)
+```
+
+* * *
+
+### Required data
+
+Import the `bumpus.csv` data set:
+
+```{r}
+bumpus <- read.csv(url("https://people.ok.ubc.ca/jpither/datasets/bumpus.csv"), header = TRUE)
+```
+
+Let's inspect the `bumpus` dataset, which contains data about a sparrow population caught in a wind storm in the 1880's.  Pay particular attention to the categorical variable `sex`, which is stored as type "factor":
+
+```{r}
+inspect(bumpus)
+```
+
+Note in the inspection above that of the 136 individual birds, 87 (64%) were male.
+
+* * *
+
+## The binomial distribution
+
+The binomial distribution applies to cases in which we conduct a set number of independent **random trials**, and for each trial there is an equal probability of a **success**.  
+
+Let’s say there are *n* trials and the probability of success is *p*.  Of those *n* trials, anywhere between 0 and *n* of them could produce an outcome “success” and the rest will be failures.  Let’s call the number of successes **X**, and thus the probability of **X** successes is:  
+
+```{r fig.width = 3, fig.height = 2,echo = FALSE}
+img <- readPNG("./more/binomial_equation.png")
+grid.raster(img)
+```
+
+* * *
+
+### Simulating a random trial
+
+Here we will simulate rolling a fair, 6-sided die to illustrate what a **binomial distribution** is.
+
+First let's specify the number of random trials (rolls of the die) to do:
+
+```{r}
+number.of.trials <- 5
+```
+
+Now let's create a vector object that includes all the possible outcomes associated with a single random trial; here, this is the numbers one through six: 
+
+```{r}
+die.outcomes <- 1:6
+```
+
+Now let's specify what a "success" is; here, rolling a "4" will be considered a success, which we know will have an associated probability of 1/6:
+
+```{r}
+success <- 4
+```
+
+With these variables specified above, we now have the ingredients to conduct a **simulation** to show what a binomial distribution looks like. 
+
+First, let's roll our die once.  We use that handy command `sample` that you learned about in the [Simulate random trials](https://people.ok.ubc.ca/jpither/modules/Simulate_random_trials.html) tutorial, remembering to first set the seed to ensure reproducible results:
+
+```{r}
+set.seed(16)
+samp1 <- sample(die.outcomes, size = 1)  # this samples one value at random from the numbers 1:6
+samp1
+```
+
+What number did you get?  You should have gotten a `r samp1`.  
+
+Now let's devise a way to keep track of whether the outcome was a success or not.  First, let's ask whether the outcome is equal to our definition of a success, i.e. whether it equals 4:
+
+```{r}
+set.seed(18)
+samp2 <- sample(die.outcomes, size = 1) # get sample
+samp2 == success # check if the sample = 4
+```
+
+This time we get the logical value "FALSE".  
+
+A handy feature of R is that it considers a value of "TRUE" as equal to "1", and a value of "FALSE" as equal to "0".
+
+Thus, the code below will return a "0" if the roll of the die did not produce a 4, and a "1" if it did! 
+
+```{r}
+set.seed(20)
+sum(sample(die.outcomes, size = 1) == success)
+```
+
+Here we got a zero.  
+
+Let's change the arguments to the "sample" command so that it mimics rolling the single die `number.of.trials` times (defined above), or equivalently, mimics rolling *n* independent dice simultaneously.  To do this, we need to specify the argument `replace = TRUE`, which tells it to put the number it sampled back into the list, for each random trial.  
+
+
+```{r}
+sample(die.outcomes, size = number.of.trials, replace = TRUE)
+```
+
+What 5 numbers did you get?  How many were a "success" (= 4)?
+
+To keep track of the number of successes, nest the `sample` routine within the `sum` command as follows:
+
+```{r}
+sum(sample(die.outcomes, size = number.of.trials, replace = TRUE) == success)
+```
+
+Make sure you understand what the output is telling you: it is the number of trials (rolls of a die) out of 5 that yielded a "success"; or equivalently, the number of die out of the 5 die rolled simultaneously that yielded a "success".  Typically we represent this number as "X", as in the formula for the binomial distribution shown above.  
+
+* * *
+
+1. Conduct your own random trial
+
+Set the seed with number 12, and roll a fair, six-sided die 12 times. Consider a _success_ to be rolling a number 2.  
+
+* How many times should you expect to roll a 2?
+* In your random trial, how many times did you roll a 2?  
+
+* * *
+
+## Binomial distribution functions in R
+
+It turns out there's a handy function `dbinom` that will calculate the exact probability associated with any particular outcome for a random trial with a given sample space (set of outcomes) and probability of success. It uses the equation shown above. 
+
+```
+?dbinom
+```
+
+So, for our example involving rolling a fair, 6-sided die *n* = 6 times (six random trials), and a probability (*p*) of observing a 4 of 1/6 (0.1667), we can calculate, for example, the probability of observing two successes (i.e. two number 4s) in our 6 rolls of the die (random trials):
+
+```{r}
+sampsize <- 6
+dbinom(x = 2, size = sampsize, prob = 1/6)
+```
+
+In order to get the probabilities associated with *each* possible outcome (i.e. 0 through 6 successes), we use the following code:
+
+```{r}
+exact.probs <- dbinom(x = 0:6, size = sampsize, prob = 1/6)
+exact.probs
+```
+
+The `dbinom` function will accept a vector of values of `x`, for which the associated probabilities are calculated.    
+
+Now let's use these exact probabilities to create a barplot showing an exact, discrete probability distribution, corresponding to the binomial distribution with a sample size (number of trials) of *n* = `r sampsize` and a probability of success *p* = 1/6:
+
+```{r fig.cap = "Figure 1: Probability of obtaining X successes out of 6 random trials, with probability of success = 1/6.", fig.height = 4, fig.width = 5}
+barplot(exact.probs, 
+        names.arg = 0:sampsize,
+        xlab = "Number of successes (X)",
+        ylab = "Probability",
+        las = 1)  # rotate axes labels
+
+```
+
+The `names.arg` argument in the preceding `barplot` code provides the labels for each bar.  
+
+Now let's increase the sample size to *n* = 15, and compare the distribution to that observed using *n* = 6:  
+
+```{r}
+sampsize <- 15
+exact.probs <- dbinom(x = 0:sampsize, size = sampsize, prob = 1/6)
+```
+
+Now plot the binomial probability distribution: 
+
+```{r fig.cap = "Figure 2: Probability of obtaining X successes out of 15 random trials, with probability of success = 1/6.", fig.height = 4, fig.width = 5}
+barplot(exact.probs, 
+        names.arg = 0:sampsize,
+        xlab = "Number of successes (X)",
+        ylab = "Probability",
+        las = 1)  # rotate axes labels
+```
+
+* * *
+
+1. Challenge: Binomial probabilities
+
+* Use the `dbinom` function to calculate the probability of rolling three "2"s when rolling a fair six-sided die 20 times.
+* Produce a graph of a discrete probability distribution for this scenario: *p* = 1/4, and *n* = 12.
+
+* * *
+
+## Binomial hypothesis test
+
+For this example we'll use the `bumpus` dataset we imported above. It contains data about sparrows caught in a wind storm in the 1880's.
+
+Let's assume that, as with many animal species, male sparrows tend to move around more than females.  Moving around more makes males more susceptible to predation, and to events such as wind storms.  Let's also assume that in the general population of sparrows, males represent 50% of the population at any given time.
+
+Based on the available data, did the wind storm catch males more than females?  
+
+* * *
+
+### Steps to hypothesis testing
+
+* State the null (**H~0~**) and alternative (**H~A~**) hypotheses  
+* Set an $\alpha$ level (usually 0.05)  
+* Determine whether a one-tailed or two-tailed test is appropriate (usually the latter)
+* Identify the appropriate test statistic, and calculate the test statistic value using observed data  
+
+* Simulate data and use them to construct a __null distribution__ for the test statistic, under the assumption of a true null hypothesis  
+__OR__: Instead of simulating data to construct a __null distribution__, use an appropriate statistical test, which provides a theoretical null distribution
+
+* Evaluate any assumptions associated the statistical test  
+* Use the __null distribution__ to determine the **_P_-value** associated with the observed test statistic  
+* Draw the appropriate conclusion and communicate it clearly  
+
+* * *
+
+Let's devise an appropriate null and alternative hypothesis for this question.  
+
+**TIP**: Recall that "probability" and "proportion" are related: the probability of an individual randomly drawn from the population belonging to the particular category of interest is equal to the proportion of individuals in the population that belong to that category.  
+
+**H~0~**: Males and females were caught by the storm in equal proportions (_p_ = 0.5).  
+**H~A~**: Males and females were not caught by the storm in equal proportions (_p_ $\ne$ 0.5).  
+
+* We'll use an $\alpha$ level of 0.05.  
+
+* It is a two-tailed alternative hypothesis; even though our research hypothesis suggests that males would have been more susceptible to being caught by the storm than females, we must allow for the possibility that they were less susceptible than females.  
+
+* The test statistic is the number of males caught (successes) (which easily converts to a proportion)  
+
+* We'll use a **binomial test** to test the null hypothesis, because this is the **most powerful test** when analyzing frequency data pertaining to a categorical variable (eg. sex) that has only 2 categories (male / female).  
+
+* The binomial test assumes that the random trials (samples) were independent, and the probability of success was equal in each trial - we'll assume so
+
+* Imagine what the sampling distribution for this test statistic would look like, given a TRUE null hypothesis: it would be centred on 0.5 times the total number individuals in the sample (here, 136), so 68, and would also be symmetric around this value (because our null value for _p_ is 0.5). We then use this sampling distribution as the reference against which we compare our observed number of males caught.  
+
+In practice, however, we use the `binomial.test` function to do this comparison for us (see below).  
+
+* Our observed test statistic, or number of males caught, is 87, as shown here:
+
+```{r}
+sum(bumpus$sex == "m")
+```
+
+or using this code, which shows the counts of both the successes ("male") and failures ("females"):
+
+```{r}
+xtabs(~ sex, bumpus)
+```
+
+This represents our number of successes *X*, and corresponds to a $\hat{p}$ = 87/136 = 0.6397. This observed proportion is certainly higher than the expected proportion of 0.5, but is it *significantly* higher?   
+
+* Our observed number of "random trials" (our total sample size) is 136, which represents our value of *n*.  
+
+Based on the fact that males represent 50% of the general sparrow population, the correct null value to use for _p_ is 0.5.  
+
+We now have all we need to calculate the _P_-value associated with our test statistic, using the binomial test.  
+
+The `binom.test` function in the `tigerstats` package (in turn taken from the `mosaic` package) is a modified version of the function by the same name in the default `stats` package:  
+
+```
+?binom.test  # select the function associated with the "mosaic" package
+```
+
+You'll see that there is an argument `alternative`, and that the first (default) value for this argument is "two.sided".  This default ensures that the _P_-value calculated from the binomial distribution is appropriately two-sided.  
+
+Now let's conduct the test:
+
+```{r}
+binom.result <- binom.test(~ sex, data = bumpus, p = 0.5, success = "m", alternative = "two.sided", ci.method = "Agresti-Coull")
+binom.result
+```
+
+Alternative syntax for the `binom.test` function:
+
+```
+binom.result <- binom.test(x = 87, n = 136, p = 0.5, alternative = "two.sided", ci.method = "Agresti-Coull")
+binom.result
+```
+
+The output from the binomial test includes the number of successes, the number of trials, and the calculated _P_-value.  It also includes the appropriate Agresti-Coull 95% confidence interval.  
+
+```{r}
+names(binom.result)
+```
+
+
+**NOTE**: the confidence interval provided in the `binom.test` in the `base` package (as opposed to the one in the `tigerstats` package, wich we use here) is not the correct Agresti-Coull interval!    
+
+**ALWAYS** use the Agresti-Coull method to calculate a confidence interval for a proportion, as shown in the [Estimating proportions](https://people.ok.ubc.ca/jpither/modules/Estimating_proportions.html) tutorial. 
+
+Now we have all the ingredients for a proper concluding statement.  
+
+### Ideal concluding statement  
+
+This is an example of an appropriate concluding statement for a binomial test:
+
+Male sparrows were caught by the storm at a significantly higher proportion than females (*n* = 136; observed proportion of males = 0.64; Binomial test; _P_-value = `r round(binom.result$p.val, 3)`; Agresti-Coull 95% confidence interval: `r round(binom.result$conf.int[1],3)` $\leq$ _p_ $\leq$ `r round(binom.result$conf.int[2],3)`.  
+
+* * *
+
+## Confidence interval approach to hypothesis testing
+
+In the preceding example, we calculated the Agresti-Coull 95% confidence interval as: `r round(binom.result$conf.int[1],3)` $\leq$ _p_ $\leq$ `r round(binom.result$conf.int[2],3)`.  
+
+Given that the interval excludes (does not encompass) the null hypothesized proportion of 0.5, we can reject the null hypothesis.  
+
+In this case, the appropriate concluding statement would be:
+
+Male sparrows were caught by the storm at a significantly higher proportion than 0.5 (*n* = 136; observed proportion of males = 0.64; Agresti-Coull 95% confidence interval: `r round(binom.result$conf.int[1],3)` $\leq$ _p_ $\leq$ `r round(binom.result$conf.int[2],3)`).  
+
+* * *
+
+**NOTE**: The `binomtestGC` function available in the `tigerstats` can be used to conduct a binomial test, but the 95% confidence interval that it calculates is not the appropriate Agresti-Coull interval. We therefore do not use this function.  
+
+* * *
+
+1. Binomial hypothesis test practice
+
+In the [Hypothesis testing](https://people.ok.ubc.ca/jpither/modules/Hypothesis_testing.html) tutorial, **Activity 1** asked you to conduct all the steps of a hypothesis test for Example 6.2 in the text book (concerning handedness in toads) using a **simulation** approach: you were to simulate data to construct a **null distribution**, with which a _P_-value could be calculated.   
+
+Using the present tutorial as a guide, repeat this activity, but this time use a **binomial test** to calculate an **exact probability** (as shown above) on Example 6.2 in the text book (concerning handedness in toads). Be sure to include all the steps of a hypothesis test.
+
+* * *
+
+## List of functions
+
+__Getting started__:
+
+* `library` 
+
+__Data frame structure__: 
+
+* `str`
+* `inspect`
+* `names`
+
+__Tabulation__:
+
+* `xtabs`
+
+__Simulation__:
+
+* `set.seed`
+* `sample`
+* `do`
+* `seq`
+
+__Math__:
+
+* `sum`
+
+__Graphs__:
+
+* `barplot`
+
+__Binomial distribution__:
+
+* `dbinom` (base package)
+* `binom.confint` (from the `binom` package)
+* `binom.test` (from the `binom` package)

@@ -1,0 +1,433 @@
+---
+title: "Checking assumptions and data transformations"
+output:
+  html_document:
+    css: tutorial.css
+    fig_caption: yes
+    highlight: pygments
+    theme: simplex
+    toc: yes
+    toc_float: yes
+---
+
+```{r global_options, include = FALSE}
+knitr::opts_chunk$set(eval = TRUE, echo = TRUE, cache = TRUE)
+```
+This page was last updated on `r format(Sys.time(), '%B %d, %Y')`.
+
+* * *
+
+## Getting started
+
+Most statistical tests, such as the *t*-test, ANOVA, Pearson correlation, and least-squares regression, have assumptions that must be met. For example, the one-sample *t*-test requires that the variable is normally distributed in the population, and least-squares regression requires that the residuals from the regression be normally distributed. In this tutorial we'll learn ways to check the assumption that the variable is normally distributed in the population.   
+
+We'll also learn how transforming a variable can sometimes help satisfy assumptions, in which case the analysis is conducted on the transformed variable. 
+
+* * *
+
+### Required packages
+
+* `tigerstats`
+* `car`
+* `arm`
+
+If you don't already have these installed, type this in the console:  
+
+```
+install.packages("tigerstats", dependencies = T)
+install.packages("car", dependencies = T)
+install.packages("arm", dependencies = T)
+```
+
+Load the packages:  
+
+```{r, message = FALSE, warning = FALSE}
+library(tigerstats)
+library(arm)
+library(car)  # load the `car` library AFTER the `arm` library
+```
+
+* * *
+
+### Required data
+
+The "marine.csv" dataset is discussed in example 13.1 in the text book.  The "flowers.csv" dataset is described below. The "students.csv" data include data about BIOL202 students from a few years ago.  
+
+```{r}
+marine <- read.csv(url("https://people.ok.ubc.ca/jpither/datasets/marine.csv"), header = TRUE)
+flowers <- read.csv(url("https://people.ok.ubc.ca/jpither/datasets/flowers.csv"), header = TRUE)
+students <- read.csv(url("https://people.ok.ubc.ca/jpither/datasets/students.csv"), header = TRUE)
+```
+
+* * *
+
+## Checking the normality assumption
+
+Look at the first handful of rows of each data frame:  
+
+```{r}
+inspect(marine)
+inspect(flowers)
+```
+
+
+* * *
+
+### Histograms and normal quantile plots
+
+We can't know for certain if a variable is normally distributed in the population, but given a proper random sample from the population, of sufficient sample size, we can assume that the frequency distribution of our sample data should, to reasonable degree, reflect the frequency distribution of the variable in the population.    
+
+The most straightfoward way to check the normality assumption is to visualize the data using a histogram, in combination with something called a **normal quantile plot**.  
+
+The R function to produce a normal quantile plot is `qqnorm`:
+
+```
+?qqnorm
+```
+
+For details about what Normal Quantile Plots are, and how they're constructed, consult this informative [link](https://data.library.virginia.edu/understanding-q-q-plots/). 
+
+And we also typically want to add a line to the normal quantile plot, using the `qqline` function, as seen below (**TIP**: note the `par` function, which allows one to align figures side by side):
+
+```{r echo = TRUE, fig.cap = "Figure 1: The frequency distribution of the 'biomass ratio' of 32 marine reserves (left) and the corresponding normal quantile plot (right)", fig.width = 8, fig.height = 4}
+par(mfrow = c(1,2)) # align figures side by side
+hist(marine$biomassRatio, main = "", 
+     las = 1, col = "grey",
+     xlab = "Biomass ratio",
+     ylab = "Frequency")
+qqnorm(marine$biomassRatio, main = "", 
+       las = 1,
+       ylab = "Biomass ratio",
+       xlab = "Normal quantile")
+qqline(marine$biomassRatio)
+```
+
+The histogram of biomass ratios shows a **right-skewed** frequency distribution, and the corresponding quantile plots shows points deviating substantially from the straight line. If the frequency distribution were normally distributed, points would fall close to the straight line in the quantile plot.   
+
+The frequency distribution of this variable obviously does not conform to a normal distribution.  
+
+* * *
+
+### Shapiro-Wilk test for normality
+
+Although graphical assessments are usually sufficient for checking the normality assumption, one can conduct a formal statistical test of the null hypothesis that the data are sampled from a population having a normal distribution. The test is called the **Shapiro-Wilk test**.  
+
+The Shapiro-Wilk test is a type of goodness-of-fit test.  
+
+The null and alternative hypotheses are as follows:
+
+**H~0~**: The data are sampled from a population having a normal distribution.  
+**H~A~**: The data are sampled from a population having a non-normal distribution.  
+
+* We'll use an $\alpha$ level of 0.05.  
+* It is a two-tailed alternative hypothesis  
+* We'll visualize the data, and interpret the graph
+* We'll conduct the test, and draw a conclusion  
+
+Although we've already determined, using graphs, that the `biomassRatio` variable in the `marine` dataset is not normally distributed, let's conduct a Shapiro-Wilk test anyways, using the `shapiro.test` function:
+
+```
+?shapiro.test
+```
+
+Here we go:
+```{r}
+norm.test <- shapiro.test(marine$biomassRatio)
+norm.test
+```
+
+It returns a test statistic "W", and an associated *P*-value.  
+
+We see here that the *P*-value is very small (<0.001), so we reject the null hypothesis, and conclude that the biomass ratio data are drawn from a non-normal population (Shapiro-Wilk test, W = `r round(norm.test$statistic, 2)`, *P*-value = `r round(norm.test$p.value, 3)`).  
+
+* * *
+
+## Checking the equal-variance assumption  
+
+Some statistical tests, such as the 2-sample *t*-test and ANOVA, assume equal variance among groups.  
+
+For this, we use the **Levene's test**, which we implement using the `leveneTest` function from the `car` package:
+
+```
+?leveneTest
+```
+
+* * *
+
+### Levene's test for equal variance  
+
+This tests the null hypothesis that the variances are equal among the groups.  
+
+The null and alternative hypotheses are as follows:
+
+**H~0~**: The two populations have equal variance ($\sigma$(1) = $\sigma$(2)).  
+**H~A~**: The two populations do not have equal variance ($\sigma$(1) $\neq$ $\sigma$(2)).  
+
+* We'll use an $\alpha$ level of 0.05.  
+* It is a two-tailed alternative hypothesis  
+* We'll conduct the test, and draw a conclusion  
+
+We'll use the "students" data, and check whether `height_cm` exhibits equal variance among males and females.  
+
+```{r}
+height.vartest <- leveneTest(height_cm ~ sex, data = students)
+height.vartest
+```
+
+It uses a test statistic "F", and we see here that the *P*-value associated with the test statistic is almost 1, so clearly not significant.  
+
+We state "A Levene's test showed no evidence against the assumption of equal variance (*F* = `r round(unlist(height.vartest)[3], 2)`; *P*-value = `r round(unlist(height.vartest)[5], 3)`)."
+
+* * *
+
+## Data transformations
+
+Here we learn how to transform numeric variables using two common methods:  
+
+* log-transform
+* logit-transform  
+
+There are many other types of transformations that can be performed, some of which are described in **Chapter 13** of the course text book.  
+
+More discussion about transformations can be found at this useful but somewhat dated [website](http://rcompanion.org/handbook/I_12.html).  
+
+Note that it is often better to use the "logit" transformation rather than the "arcsin square-root" transformation for proportion or percentage data, as described in this [article](http://onlinelibrary.wiley.com/doi/10.1890/10-0340.1/abstract) by Warton and Hui (2011).
+
+* * *
+
+### Log-transform
+
+When one observes a right-skewed frequency distribution, as seen in the marine biomass ratio data above, a log-transformation often helps.  
+
+To log-transform the data, simply create a new variable in the data frame, say `logbiomass`, and use the `log` function like so:  
+
+```{r }
+marine$logbiomass <- log(marine$biomassRatio)
+```
+
+Let's look at the histogram of the transformed data:
+
+```{r fig.cap = "Figure 2: The frequency distribution of the 'biomass ratio' (log-transformed) of 32 marine reserves (left) and the corresponding normal quantile plot (right)", fig.width = 8, fig.height = 4}
+par(mfrow = c(1,2)) # align figures side by side
+hist(marine$logbiomass, main = "", 
+     las = 1, col = "grey",
+     xlab = "Biomass ratio (log-transformed)",
+     ylab = "Frequency")
+qqnorm(marine$logbiomass, main = "", 
+       las = 1,
+       ylab = "Biomass ratio (log)",
+       xlab = "Normal quantile")
+qqline(marine$logbiomass)
+```
+
+The log-transform definitely helped, but the distribution still looks a bit wonky.  
+
+Just to be sure, let's conduct a Shapiro-Wilk test, using an $\alpha$ level of 0.05:
+
+```{r}
+shapiro.test(marine$logbiomass)
+```
+
+The *P*-value is greater than 0.05, so we'd conclude that there's not sufficient evidence to reject the null hypothesis that these data fit a normal distribution.  
+
+Importantly, with decent sample sizes (here, 32), tests such as the *t*-test are robust to slight non-normality.  
+
+* * *
+
+### Dealing with zeroes
+
+If you try to log-transform a value of zero, R will return a `-Inf` value.  
+
+In this case, you'll need to add a constant (value) to each observation, and convention is to simply add 1 to each value prior to log-transforming.  
+
+In fact, you can add any constant that makes the data conform best to the assumptions once log-transformed. The key is that you must add the same constant to every value in the variable.   
+
+You then conduct the analyses using these newly transformed data (which had 1 added prior to log-transform), remembering that after back-transformation (see below), you need to subtract 1 to get back to the original scale.  
+
+* * *
+
+### Log bases
+
+The `log` function calculates the natural logarithm (base *e*), but related functions permit any base:  
+
+```
+?log
+```
+
+For instance, `log10` uses log base 10:
+```{r}
+marine$log10biomass <- log10(marine$biomassRatio)
+```
+
+* * *
+
+### Back-transforming log data
+
+In order to back-transform data that were transformed using the natural logarithm (`log`), you make use of the `exp` function:  
+
+```
+?exp
+```
+
+Let's try it, and plot the original untransformed data against the back-transformed data, and they should fall on the equality straight line in a scatterplot.  
+First, back-transform the data and store the results in a new variable within the data frame:  
+
+```{r}
+marine$biomass_back_transformed <- exp(marine$logbiomass)
+```
+
+Now plot these against the original data frame variable:  
+
+```{r fig.cap = "Figure 3. The original, raw biomass data (x-axis) plotted against back-transformed data (y-axis)", fig.width = 4.5, fig.height = 4}
+plot(biomass_back_transformed ~ biomassRatio, data = marine,
+     ylab = "Back-transformed data",
+     xlab = "Original untransformed data",
+     las = 1)
+```
+
+Yup, it worked!
+
+If you had used the log base 10 transformation, as follows:  
+
+```{r}
+marine$log10_biomass <- log10(marine$biomassRatio)
+```
+
+then this is how you back-transform:  
+
+``` {r}
+10^(marine$log10biomass)
+```
+
+The `^` symbol stands for "exponent". So here we're calculating 10 to the exponent *x*, where *x* is each value in the dataset.  
+
+* * *
+
+### Logit transform
+
+For data that are proportions or percentages, it is recommended that they be logit-transformed.  
+
+The `arm` package includes both the `logit` function and the `invlogit` function, the latter for back-transforming.  
+
+However, the `logit` funcion that is in the `car` package is better, because it accommodates the possibility that your dataset includes a zero and / or a one (equivalently, a zero or 100 percent), and has a mechanism to deal with this properly.  
+
+The `logit` function in the `arm` package does not deal with this possibility for you.  
+
+However, the `car` package does not have a function that will back-transform logit-transformed data.  
+
+This is why we'll **use the `logit` function from the `car` package, and the `invlogit` function from the `arm` package!**  
+
+Let's see how it works with the `flowers` dataset, which includes a variable `propFertile` that describes the proportion of seeds produced by individual plants that were fertilized.  
+
+Let's visualize the data:  
+
+```{r fig.cap = "Figure 4: The frequency distribution of the proportion of seeds fertilized on 30 plants (left) and the corresponding normal quantile plot (right)", fig.width = 8, fig.height = 4}
+par(mfrow = c(1,2)) # align figures side by side
+hist(flowers$propFertile, main = "", 
+     las = 1, col = "grey",
+     xlab = "Proportion of seeds that were fertilized",
+     ylab = "Frequency")
+qqnorm(flowers$propFertile, main = "", 
+       las = 1,
+     xlab = "Proportion of seeds that were fertilized",
+     ylab = "Frequency")
+qqline(flowers$propFertile)
+```
+
+Now let's logit-transform the data.  
+
+To ensure that we're using the correct `logit` function, i.e. the one from the `car` package and NOT from the `arm` package, we can use the `::` syntax, with the package name preceding the double-colons, which tells R the correct package to use, as follows:  
+
+```{r}
+flowers$logitfertile <- car::logit(flowers$propFertile)
+```
+
+Now let's visualize the transformed data:  
+
+```{r fig.cap = "Figure 5: The frequency distribution of the proportion of seeds fertilized (logit transformed) on 30 plants (left) and the corresponding normal quantile plot (right)", fig.width = 8, fig.height = 4}
+par(mfrow = c(1,2)) # align figures side by side
+hist(flowers$logitfertile, main = "", 
+     las = 1, col = "grey",
+     xlab = "Proportion of seeds that were fertilized (logit)",
+     ylab = "Frequency")
+qqnorm(flowers$logitfertile, main = "", 
+       las = 1,
+     xlab = "Proportion of seeds that were fertilized (logit)",
+     ylab = "Frequency")
+qqline(flowers$logitfertile)
+```
+
+That's much better!  
+
+* * *
+
+### Back-transforming logit data
+
+We'll use the `invlogit` function from the `arm` package:  
+
+```
+?invlogit
+```
+
+First do the back-transform, storing the results in a new object:
+```{r}
+flowers$flower_backtransformed <- invlogit(flowers$logitfertile)
+```
+
+
+Let's plot the back-transformed data against the original data, and see if they match:
+```{r fig.cap = "Figure 6. The original, raw flower data (x-axis) plotted against back-transformed data (y-axis)", fig.width = 4.5, fig.height = 4}
+plot(flower_backtransformed ~ propFertile, data = flowers,
+     ylab = "Back-transformed data",
+     xlab = "Original untransformed data",
+     las = 1)
+```
+
+Yup, it worked!
+
+* * *
+
+### When to back-transform?
+
+You should back-transform your data when it makes sense to communicate findings on the original measurement scale.  
+
+The most common example is reporting confidence intervals for a mean or difference in means.  
+
+If you conduct a least-square regression analysis on transformed data, you do not generally need to back-transform any of the results, but you should make clear that the data are transformed (and what transformation you used). In some instances, perhaps when talking about specific predicted values from the regression, it may make sense to back-transform.  
+
+* * *
+
+## List of functions
+
+__Getting started__:
+
+* `read.csv`
+* `url`
+* `library` 
+
+__Testing assumptions__: 
+
+* `head`
+* `hist`
+* `qqnorm`
+* `qqline`
+* `par`  
+* `plot`
+* `shapiro.test`
+* `leveneTest` (from the `car` package)
+* `inspect` (from the `tigerstats` package)
+
+__Transformations__:  
+
+* `log`
+* `log10`
+* `logit` (from the `car` package)
+* `invlogit` (from the `arm` package)
+* `exp`
+
+* * *
+
+
+
+
+

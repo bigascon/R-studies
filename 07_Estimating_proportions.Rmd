@@ -1,0 +1,373 @@
+---
+title: "Estimating proportions"
+output:
+  html_document:
+    css: tutorial.css
+    fig_caption: yes
+    highlight: pygments
+    theme: simplex
+    toc: yes
+    toc_float: yes
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(eval = TRUE)
+library(tigerstats, warn.conflicts = FALSE, quietly = TRUE)
+library(binom, warn.conflicts = FALSE, quietly = TRUE)
+lattice.options(default.theme = standard.theme(color = FALSE))
+inline_hook <- function(x) {
+  if (is.numeric(x)) {
+    format(x, digits = 2)
+  } else x
+}
+knitr::knit_hooks$set(inline = inline_hook)
+```
+This page was last updated on `r format(Sys.time(), '%B %d, %Y')`.
+
+* * *
+
+## Getting started
+
+In this tutorial we will learn about the following:
+
+* The __Sampling Distribution for a Proportion__  
+* Properties of the sampling distribution for a proportion
+* Calculating the __Standard Error for a Proportion__
+* Calculating a __Confidence interval for a Proportion__
+
+* * *
+
+### Required packages
+
+* the `tigerstats` package
+* the `binom` package
+
+You may need to install the `binom` package, and if you do, copy this code into your console and press enter:  
+
+```
+install.packages("binom", dependencies = T, quiet = T)
+```
+
+Then don't forget to load the packages, by typing the following in your console:  
+
+```
+library(tigerstats, warn.conflicts = FALSE, quietly = TRUE)
+library(binom, warn.conflicts = FALSE, quietly = TRUE)
+```
+
+* * *
+
+### Required data
+
+* none
+
+* * *
+
+## The sampling distribution for a proportion
+
+### A refresher
+
+We previously learned that when the population characteristic of interest (i.e. the variable of interest) is numeric, such as height, the key population parameter of interest is typically the __mean__. 
+
+In the [Sampling, Estimation, and Uncertainty](https://people.ok.ubc.ca/jpither/modules/Sampling_Estimation_Uncertainty.html#sampling_distribution_of_the_mean) tutorial we learned about the **sampling distribution of the mean**.  We learned that different random samples from the population will each yield different estimates of the population mean, due simply to __sampling error__.  
+
+We also learned that the **standard error of the mean** provides a measure of uncertainty around our estimate of the population mean.  
+
+Here we are dealing with a population characteristic, or variable, that is **categorical** - "hair colour" for example, with categories brown, black, blonde, and red. 
+
+The key population parameter of interest when dealing with a categorical variable is the **proportion**, but we need to define what category we're focusing on.  
+
+Let's consider "red" to be the category of interest. Doing so, we have simplified our categorical variable into a **binary** variable in which having red hair is considered a **success**, and any other colour is a failure.  
+
+We can now ask, for example: What **proportion** of students in the class has red hair?  
+
+This is analagous to asking: What is the mean height of students in the class?
+
+Just as our estimate of the population mean has a sampling distribution, so too does our estimate of the population proportion, a **sampling distribution for a proportion**. 
+
+* * *
+
+### Simulating the sampling distribution for a proportion
+
+We can simulate the sampling distribution for a proportion as follows:  
+
+* define a population whose individuals have brown, black, red, or blonde hair in some defined proportions  
+* define "red" hair as our category of interest, i.e. the "success"  
+* draw a sample of size _n_ from this population and calculate the proportion of successes  
+* repeat the sampling (random trial) many times, each time tallying the number and corresponding proportion of successes  
+* plot the resulting **sampling distribution**  
+
+Here are the steps in R.
+
+We will use the function `rep` from the base R package. Look at the help file:
+
+```
+?rep
+```
+
+First let's create the population from which we'll sample individuals. We'll make it a population of 10000 individuals, and we'll set the proportion of red-haired individuals (i.e. the true proportion of "successes") to 0.18:  
+
+```{r}
+pop.size <- 10000
+true.prop.red <- 0.18
+```
+
+Create a vector holding the category names (i.e. all 4 potential outcomes), and their respective proportions in the population, noting that we already defined the proportion of red-haired individuals above as `true.prop.red = 0.18`.  
+
+```{r}
+hair.colours <- c("brown", "black", "red", "blonde")
+hair.props <- c(0.5, 0.2, true.prop.red, 0.12)
+```
+
+Create a vector object `pop.hair` that repeats each of the four hair colour names according to their respective frequencies, which is simply the respective proportions each multiplied by the population size (hence the code `hair.props * pop.size`):  
+
+```{r}
+pop.hair <- rep(c("brown", "black", "red", "blonde"), hair.props * pop.size)
+```
+
+Double-check that you have created a vector object of length `r pop.size`:
+
+```{r}
+length(pop.hair)
+```
+
+Now, let's refresh our memory on how to calculate proportions of categories from a given vector of observations.  
+
+First we create a table of frequencies using the `xtabs` function (from the tigerstats package), then by using the `prop.table` function (functions we learned about in an earlier [tutorial](https://people.ok.ubc.ca/jpither/modules/Visualizing_describing_single_variable.html#calculating_descriptive_statistics_for_a_categorical_variable)):
+
+```{r}
+true.hair.col.freqs <- xtabs(~ pop.hair)
+true.hair.col.props <- prop.table(true.hair.col.freqs)
+true.hair.col.props
+```
+
+So, we verify that the true proportion of red-haired individuals in our population of `r pop.size` is `r true.hair.col.props[4]`.  
+
+**NOTE**: notice that the ordering of the categories from this `xtabs` output differs from what we entered in the `hair.colours` object. This is because `xtabs` re-ordered the categories alphabetically.  
+
+1. Refresher: create a bar chart showing the frequency distribution of hair colours (relevant tutorial found [here](https://people.ok.ubc.ca/jpither/modules/Visualizing_describing_single_variable.html#visualizing_and_describing_categorical_data)) 
+
+
+Now for our sampling exercise that will yield a sampling distribution:
+
+Define a sample size to use, and the number of trials (i.e. the number of times we wish to sample the population):
+```{r}
+sampsize <- 10
+number.of.trials <- 10000
+```
+
+To start, sample `r sampsize` individuals from the population (without replacement) and calculate the observed proportion of red-haired individuals:
+```{r}
+set.seed(28)
+samp.hair <- sample(pop.hair, size = sampsize, replace = FALSE)
+obs.prop.red <- sum(samp.hair == "red") / sampsize
+```
+
+Let's look at our result:
+```{r}
+obs.prop.red
+```
+
+In this example we got a proportion of `r obs.prop.red`, meaning `r obs.prop.red * sampsize` of the `r sampsize` people sampled had red hair.
+
+Repeat the sampling `number.of.trials` times using the familiar `do` function, and store the resulting proportions (**NOTE**: this might take a few seconds).  
+
+**TIP**: In the following code, we tell R to first take a sample of size `r sampsize` from the vector object `pop.hair` (without replacement), and we assign that resulting sample to a temporary object we call `temp`. Next, after the semicolon, we use the `sum` function to tally the number of observations in our sample that equal the category `red`. Finally, we divide this number by `r sampsize` to calculate the sample proportion. All of these steps are repeated `number.of.trials` times, and all the commands are placed inside curly brackets `{ }`.
+
+```{r}
+set.seed(200)
+red.prop.trials <- do(number.of.trials) * 
+          {
+          temp <- sample(pop.hair, size = sampsize, replace = FALSE);
+          sum(temp == "red")/sampsize
+          }
+```
+
+The resulting object `red.prop.trials` is a data frame with a variable called `result`:  
+
+```{r}
+str(red.prop.trials)
+```
+
+Think carefully about what the variable `result` is storing: it stores the proportion of the sample of `r sampsize` people that had red hair, and holds `r number.of.trials` such proportions.
+
+* * *
+
+### Visualizing the sampling distribution for a proportion
+
+Let's visualize the resulting sampling distribution we created above using the `barplot` function from the base package (in a previous [tutorial](https://people.ok.ubc.ca/jpither/modules/Visualizing_describing_single_variable.html#visualizing_and_describing_categorical_data), we learned how to use the `barchartGC` function from the `tigerstats` package; here we're using the `base` package function `barplot` instead).  
+
+Let's look at the help file for the `barplot` function:
+
+```
+?barplot
+```
+
+Now, let's tabulate the proportion values that we observed in our `r number.of.trials` trials:  
+
+```{r}
+red.samp.freqs <- xtabs(~ result, data = red.prop.trials)
+red.samp.props <- prop.table(red.samp.freqs)
+red.samp.props
+```
+
+This is a **discrete probability distribution**, because it deals with discrete outcomes, each with a known probability. Thus, a bar chart is appropriate here.  
+
+```{r fig.cap = "Figure 1: Bar chart of the outcomes of 1000 samples from the population.", fig.height = 4, fig.width = 5}
+barplot(red.samp.props, 
+        col = "grey", 
+        xlab = "Proportion of people with red hair",
+        ylab = "Relative frequency",
+        las = 1, 
+        ylim = c(0, 0.4))
+```
+
+In our simulation, we see that the most common outcomes in the random trials were observing proportions of 0.1 and 0.2, corresponding to 1 or 2 out of 10 people having red hair, respectively.  **However**, we did occassionally get as many as 6 or 7 people out of 10 with red hair. We never got more than 7 out of 10 with red hair, even though it was possible in theory. 
+
+This distribution is know as a **binomial distribution**, because it dealt with a binary outcome (success/failure).  We'll learn more about the binomial distribution the next [tutorial](https://people.ok.ubc.ca/jpither/modules/Binomial_distribution.html). 
+
+* * *
+
+## Properties of the sampling distribution for a proportion
+
+In the [Sampling, Estimation, and Uncertainty](https://people.ok.ubc.ca/jpither/modules/Sampling_Estimation_Uncertainty.html#sampling_distribution_of_the_mean) tutorial we learned that the **sampling distribution for a mean** was centred on the true population mean $\mu$, and had a spread that we quantified using a special kind of standard deviation, the **standard error of the mean**.  
+
+Likewise, the **sampling distribution for a proportion** is centred on the true population proportion _p_, and has a spread that we quantify using the **standard error of a proportion**.  
+
+Let's verify that our sampling distribution created above, and stored in the `sum` variable of the data frame object `prop.red.samps`, is indeed centred on the true population proportion:  
+
+```{r}
+mean(red.prop.trials$result)
+```
+
+It sure is!
+
+* * *
+
+## Calculating the standard error for a proportion
+
+**NOTE**: Most of the time one would simply report an estimate of a proportion with a 95% confidence interval instead of the standard error for the estimate. Nevertheless, we'll demonstrate here how you can calculate the standard error of a proportion in R.   
+
+Let's take a new random sample of _n_ = 40 individuals from the population (without replacement):  
+
+```{r}
+set.seed(20)
+sampsize <- 40
+samp40.counts <- sample(pop.hair, size = sampsize, replace = FALSE)
+```
+
+Now, using this sample, let's calculate the **standard error of the proportion**, analogous to the "standard error of the mean":  
+
+
+![](./more/se_proportion.png)
+
+
+In R, it can be calculated long-hand as follows:
+
+Calculate the observed proportion of people with red hair, or $\hat{p}$:  
+
+```{r}
+number.red <- sum(samp40.counts == "red") # frequency of successes
+pHat.red <- number.red / sampsize
+pHat.red
+```
+
+Thus, `r pHat.red` is our sample-based estimate of the true proportion of red-haired people in the population. Due to sampling error (something we expect), this is a little off from the known, true proportion of `r round(true.hair.col.props[4], 3)`.  
+
+**NOTE**: In practice, we typically don't know the true propulation value... we estimate it using a sample!   
+
+Now calculate the sample-based standard error of the proportion, using appropriate nesting of functions for expediency:  
+
+```{r}
+se.prop.red <- sqrt( (pHat.red * (1 - pHat.red))/sampsize ) 
+se.prop.red
+```
+
+When estimating a proportion, we should report both the estimate itself **and** the standard error of the estimate as follows:
+
+The estimated proportion of red-haired people in the population, $\hat{p}$, is `r round(pHat.red, 3)` $\pm$ `r round(se.prop.red,4)`.
+
+* * *
+
+## Calculating the 95% confidence interval for a proportion
+
+Use the `binom` package and the `binom.confint` function to calculate the __Agresti-Coull 95% confidence interval__ for a proportion.  
+
+First have a look at the function details:  
+
+```
+?binom.confint
+```
+
+And here's the code:  
+
+```{r}
+ac.conf <- binom.confint(x = number.red,
+                         n = sampsize, 
+                         conf.level = 0.95, 
+                         methods = "ac")  # the "ac" stands for "Agresti-Coull"
+ac.conf
+```
+
+This returns our observed proportion (`r round(ac.conf$mean, 3)`, somewhat confusingly under the heading "mean"!), and our lower and upper 95% confidence limits for the proportion.
+
+We would write this as `r round(ac.conf$lower,3)` $\leq$ _p_ $\leq$ `r round(ac.conf$upper,3)`.  
+
+In this example, our calculated 95% confidence interval does indeed encompass our known, true proportion of `r true.hair.col.props[4]`.
+
+* * *
+
+**NOTE**: The `proptestGC` function available in the `tigerstats` package calculates the standard error for a proportion, but the confidence interval that it provides is not the appropriate Agresti-Coull confidence interval. We therefore do not use this function.  
+
+* * *
+
+1. Challenge: simulate estimating a proportion
+
+* The proportion of males in a population of 100000 people is known to be 0.52 
+* Using the `sample` function as above, sample 20 individuals at random from this population 
+* Calculate the sample-based estimate of the proportion of males, and the Agresti-Coull 95% confidence interval
+* Set your seed with number 133 at the beginning of your code
+
+* * *
+
+## List of functions
+
+__Getting started__:
+
+* `library` 
+
+__Data frame structure__: 
+
+* `str`
+* `inspect`
+* `length` 
+
+__Tabulation__:
+
+* `xtabs`
+* `prop.table`
+
+__Simulation__:
+
+* `rep`
+* `set.seed`
+* `sample`
+* `do`
+
+__Math__:
+
+* `sum`  
+* `sqrt`
+
+__Data management and exploration__:
+
+* `mean`
+
+__Graphs__:
+
+* `barplot`
+
+__Binomial distribution__:
+
+* `binom.confint` (from the `binom` package)
+

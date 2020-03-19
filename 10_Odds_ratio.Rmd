@@ -1,0 +1,204 @@
+---
+title: "Odds ratio"
+output:
+  html_document:
+    css: tutorial.css
+    fig_caption: yes
+    highlight: pygments
+    theme: simplex
+    toc: yes
+    toc_float: yes
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(eval = TRUE)
+library(epitools, warn.conflicts = FALSE, quietly = TRUE)
+library(tigerstats, warn.conflicts = FALSE, quietly = TRUE)
+lattice.options(default.theme = standard.theme(color = FALSE))
+```
+This page was last updated on `r format(Sys.time(), '%B %d, %Y')`.
+
+* * *
+
+## Getting started
+
+The "odds ratio" is a phrase that is commonly used in the health sciences.  
+
+Here, we will simply show you what tools are available in RStudio to help calculate and analyze odds ratios.  This tutorial material largely follows the material provided on the R-code section of the text Analysis of Biological Data [website](http://whitlockschluter.zoology.ubc.ca/r-code/rcode09).  
+
+* * *
+
+### Required packages
+
+We need to install the `epitools` package, by typing this into your command console (you only need to do this once on your own computer):
+
+```
+install.packages("epitools", dependencies = TRUE)
+```
+
+Now load the package:
+
+```{r}
+library(epitools, warn.conflicts = FALSE, quietly = TRUE)
+```
+
+* * *
+
+### Required data
+
+Import the "cancer.csv" dataset (described in Example 9.2 in the text Analysis of Biological Data, page 238) and inspect it:  
+
+```{r}
+cancer <- read.csv(url("https://people.ok.ubc.ca/jpither/datasets/cancer.csv"), header = TRUE)
+inspect(cancer)
+```
+ 
+As you can see, there are many thousands of observations in the dataset (39876 to be exact).  
+
+The data are stored in "long format", meaning each observation has its own record (row).  
+
+* * *
+
+## Visualize the data
+
+### Display a contingency table
+
+To create a 2 x 2 contingency table from these data, we'll make use of the `xtabs` function we've used learned about [before](https://people.ok.ubc.ca/jpither/modules/Visualizing_association_two_variables.html#constructing_a_contingency_table):  
+
+```{r}
+cancerTable <- xtabs(~ cancer + aspirinTreatment, data = cancer)
+cancerTable
+```
+
+**NOTE**: It is convention to organize the contingency table as shown above, with (i) the outcome of interest (here, cancer) in the top row and the alternative outcome on the bottom row, and (ii) the treatment in the first column and placebo (control group) in the second column.  
+
+In order to display the data as shown above, it is important that the variable containing the outcome data (here, `cancer`) comes first after the `~` symbol.  
+
+* * *
+
+### Create a mosaic plot
+
+Let's visualize the data using a mosaic plot.  
+
+**NOTE**: We need to "transpose" (rotate) our table to display the graph properly. For this we use the `t` function:
+
+```{r fig.cap = 'Figure 1: The relative frequency of cancer among study subjects (all women) who received 100mg of aspirin every other day (_n_ = 19934) or a placebo (_n_ = 19942)', fig.width = 4, fig.height = 4.5}
+mosaicplot( t(cancerTable), 
+            col = c("firebrick", "goldenrod1"), # define colours to use
+            cex.axis = 0.9,  # change font size for axis labels
+            xlab = "Treatment", 
+            ylab = "Condition", 
+            main = "")  # don't show a main heading above the graph
+```
+
+**NOTE**: You'll note that there is no y-axis in the mosaic plot, unlike those shown in the text book. This is OK. It is still showing relative frequency (hence the figure caption).   
+
+* * *
+
+## Estimate the Odds of getting sick
+
+To estimate the "odds" of getting cancer while taking aspirin, we need to first calculate the proportion of women who got cancer while taking aspirin.  This is calculated by dividing the frequency of cancer occurrences (in the aspirin treatment) by the total number of women in the aspirin treatment.  The latter number can be obtained with the `sum` function applied to just the first column in the table:
+
+```{r}
+prop.cancer.aspirin <- cancerTable[1,1] / sum(cancerTable[,1])
+prop.cancer.aspirin
+```
+
+Now, the proportion of aspirin patients that *did not* get cancer is simply:
+
+```{r}
+prop.healthy.aspirin <- 1 - prop.cancer.aspirin
+prop.healthy.aspirin
+```
+
+Now we have what we need to calculate the "odds" of developing cancer while taking aspirin:
+
+```{r}
+odds.cancer.aspirin <- prop.cancer.aspirin / prop.healthy.aspirin
+odds.cancer.aspirin
+```
+
+Thus, the odds of getting cancer while on aspirin are about `r round(odds.cancer.aspirin,2)`:1, or equivalently, around 1:13.  
+
+Alternatively, "the odds are 13 to 1 that a women who took aspirin would **not** get cancer in the next 10 years".
+
+* * *
+
+1. Estimate odds
+
+* Estimate the odds that a woman in the placebo group would get cancer
+
+* * *
+
+## Estimate the odds ratio
+
+We'll use the `oddsratio` function from the `epitools` package to calculate the odds ratio ($\hat{OR}$) and its 95% confidence interval.  
+
+Check out the help file for the function:
+
+```
+?oddsratio
+```
+
+The `oddsratio` function expects the contingency table to be arranged exactly like this:  
+
+```
+#            treatment control
+#  sick          a        b
+#  healthy       c        d
+```
+
+If you were calculating the odds ratio by hand, using the letters shown in the table above, the shortcut formula is:  
+
+
+![](./more/odds_ratio.png)
+
+
+We'll use the `oddsratio` function, and make sure to specify the `method = "wald"` argument to get the correct calculations (don't worry about why):  
+
+```{r}
+cancer.odds <- oddsratio(cancerTable, method = "wald")
+cancer.odds
+```
+
+To limit the output to the relevant information, use this code:  
+
+```{r}
+cancer.odds$measure[2,]
+```
+
+The estimate of the odds ratio is around `r round(cancer.odds$measure[2,1],3)`, and the 95% confidence interval encompasses one.  
+
+Given that the calculated 95% confidence interval encompasses 1 (representing equal odds among treatment and control groups), there is presently no evidence that the odds of developing cancer differ among control and aspirin treatment groups.  
+
+**The odds ratio and its 95% confidence interval are useful to report in any analysis of a 2 x 2 contingency table that deals with health outcomes data like those used here.**  
+
+* * *
+
+## List of functions
+
+__Getting started__:
+
+* `library` 
+
+__Data frame structure__: 
+
+* `inspect`
+
+__Tabulation__:
+
+* `xtabs`  
+
+__Manipulate data__:
+
+* `t` (base package, for transposing matrix)
+
+__Graphs__:
+
+* `mosaicplot`
+
+__Odds ratio__:
+
+* `oddsratio` (from the `epitools` package)
+
+
